@@ -968,6 +968,45 @@ const GroupsPage: React.FC = () => {
               </div>
             </div>
 
+            {/* Mobile Workspace Tools - shown only when left panel is hidden */}
+            <div className="lg:hidden flex gap-2 px-3 py-2 border-b border-slate-100 overflow-x-auto shrink-0">
+              <button
+                onClick={handleGeneratePlan}
+                disabled={isGeneratingPlan || activeGroup.status === GroupStatus.ARCHIVED}
+                className="flex items-center gap-1.5 px-3 py-2 bg-blue-50 text-blue-600 rounded-xl shrink-0 disabled:opacity-50"
+              >
+                {isGeneratingPlan ? <Loader2 size={14} className="animate-spin" /> : <BookOpen size={14} />}
+                <span className="text-[10px] font-black uppercase">Study Plan</span>
+              </button>
+              <button
+                onClick={() => setShowLiveSession(true)}
+                disabled={activeGroup.status === GroupStatus.ARCHIVED}
+                className="flex items-center gap-1.5 px-3 py-2 bg-orange-50 text-orange-600 rounded-xl shrink-0 disabled:opacity-50"
+              >
+                <Mic size={14} />
+                <span className="text-[10px] font-black uppercase">Live Room</span>
+              </button>
+              {(activeGroup.is_member || isLeader) && (
+                <button
+                  onClick={() => setShowMembersModal(true)}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-purple-50 text-purple-600 rounded-xl shrink-0"
+                >
+                  <UsersIcon size={14} />
+                  <span className="text-[10px] font-black uppercase">Details</span>
+                </button>
+              )}
+              {isLeader && (
+                <button
+                  onClick={() => { setShowMeetingsModal(true); setShowScheduleForm(false); if (activeGroupId) fetchGroupEvents(activeGroupId); }}
+                  disabled={activeGroup.status === GroupStatus.ARCHIVED}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 text-emerald-600 rounded-xl shrink-0 disabled:opacity-50"
+                >
+                  <CalendarIcon size={14} />
+                  <span className="text-[10px] font-black uppercase">Meetings</span>
+                </button>
+              )}
+            </div>
+
             <div ref={chatContainerRef} onScroll={handleChatScroll} className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6 bg-slate-50/30 relative">
               {activeGroup.status === GroupStatus.ARCHIVED && (
                  <div className="bg-slate-100 border border-slate-200 p-6 rounded-[2rem] text-center space-y-2 mb-4 animate-in slide-in-from-top-2">

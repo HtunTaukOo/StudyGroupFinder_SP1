@@ -150,7 +150,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUserUpdate }) => {
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
       <div className="relative">
-        <div className="h-36 sm:h-48 w-full bg-gradient-to-r from-orange-400 to-orange-600 rounded-[2rem] sm:rounded-[3rem] shadow-xl shadow-orange-100"></div>
+        <div className="h-44 sm:h-48 w-full bg-gradient-to-r from-orange-400 to-orange-600 rounded-[2rem] sm:rounded-[3rem] shadow-xl shadow-orange-100"></div>
         <div className="absolute top-4 sm:top-8 left-4 sm:left-12 flex flex-col md:flex-row items-start gap-3 sm:gap-6 w-[calc(100%-2rem)] sm:w-[calc(100%-6rem)]">
           <div className="w-20 h-20 sm:w-32 sm:h-32 bg-white rounded-[1.5rem] sm:rounded-[2.5rem] p-1.5 sm:p-2 shadow-2xl shrink-0">
             <div className="w-full h-full bg-orange-100 rounded-[1.25rem] sm:rounded-[2rem] flex items-center justify-center text-orange-600 text-2xl sm:text-4xl font-black border border-orange-200">

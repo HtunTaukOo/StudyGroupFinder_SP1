@@ -16,10 +16,6 @@ export default defineConfig(({ mode }) => {
   return {
     base: basePath,
     plugins: [tailwindcss(), react()],
-    define: {
-      // Polyfill process.env for the browser
-      'process.env.API_KEY': JSON.stringify(env.API_KEY || ''),
-    },
     server: {
       port: 3000,
       proxy: {

@@ -64,6 +64,7 @@ Required environment variables:
 
 Optional (email):
 - `MAIL_MAILER=smtp`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS`
+- `GEMINI_API_KEY=<server-side key for AI text tools>`
 
 ### Service B (Frontend)
 
@@ -76,14 +77,13 @@ npm ci && npm run build
 
 - Start command:
 ```bash
-npx vite preview --host 0.0.0.0 --port ${PORT:-4173}
+./node_modules/.bin/vite preview --host 0.0.0.0 --port ${PORT:-4173}
 ```
 
 Required environment variables:
 - `VITE_BASE_PATH=/` (or your subpath)
 - `VITE_API_BASE_URL=https://<your-api-domain>/api`
 - `VITE_STORAGE_URL=https://<your-api-domain>/storage`
-- `VITE_API_KEY=<gemini-key-if-used>`
 
 ## Deploy-Ready Config Added
 

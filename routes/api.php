@@ -13,6 +13,7 @@ use App\Http\Controllers\API\AdminController;
 use App\Http\Controllers\API\RatingController;
 use App\Http\Controllers\API\ReportsController;
 use App\Http\Controllers\API\LeaderRequestController;
+use App\Http\Controllers\API\AiController;
 
 // Auth
 Route::post('/register', [AuthController::class, 'register']);
@@ -105,6 +106,11 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\SuspendedUserMiddleware:
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
     Route::post('/notifications/mark-read', [NotificationController::class, 'markAsRead']);
+
+    // AI utilities (server-side Gemini, key stays on backend)
+    Route::post('/ai/group-description', [AiController::class, 'generateGroupDescription']);
+    Route::post('/ai/summarize-chat', [AiController::class, 'summarizeChat']);
+    Route::post('/ai/study-plan', [AiController::class, 'suggestStudyPlan']);
 
     // Admin Routes (requires admin middleware)
     Route::middleware('admin')->prefix('admin')->group(function () {

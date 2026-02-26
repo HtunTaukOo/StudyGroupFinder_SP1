@@ -103,9 +103,13 @@ const LiveStudySession: React.FC<LiveStudySessionProps> = ({ onClose, subject })
         localOutputCtx = outputCtx;
         audioContextRef.current = { input: inputCtx, output: outputCtx };
 
-        // Initialize GoogleGenAI with the import.meta.env.VITE_API_KEY
-        console.log('[LiveSession] API Key:', import.meta.env.VITE_API_KEY ? 'SET' : 'MISSING');
-        const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_API_KEY });
+        // Avoid embedding API keys in the frontend bundle.
+        const runtimeKey = (window.localStorage.getItem('gemini_client_key') || '').trim();
+        if (!runtimeKey) {
+          setStatus('AI Tutor unavailable: missing runtime key');
+          return;
+        }
+        const ai = new GoogleGenAI({ apiKey: runtimeKey });
         console.log('[LiveSession] Attempting to connect to Gemini...');
         const session = await ai.live.connect({
           model: 'gemini-2.5-flash-native-audio-preview-12-2025',

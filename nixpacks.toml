@@ -1,0 +1,7 @@
+providers = ["php", "node"]
+
+[phases.install]
+cmds = []
+
+[phases.build]
+cmds = []

@@ -29,7 +29,8 @@
       "Bash(git commit -m \"Remove nixpacks.toml - use Railway dashboard build commands instead\")",
       "Bash(git push)",
       "Bash(git add nixpacks.toml)",
-      "Bash(git commit -m \"Add nixpacks.toml: disable auto-install so Railway build commands control everything\")"
+      "Bash(git commit -m \"Add nixpacks.toml: disable auto-install so Railway build commands control everything\")",
+      "Bash(git commit:*)"
     ]
   }
 }

@@ -1,14 +1,14 @@
-providers = ["php"]
+providers = ["php", "node"]
 
 [phases.install]
 cmds = [
-  "composer install --no-dev --optimize-autoloader --no-interaction"
+  "composer install --no-dev --optimize-autoloader --no-scripts --no-interaction"
 ]
 
 [phases.build]
 cmds = [
-  "php artisan package:discover --ansi",
-  "php artisan config:clear"
+  "php artisan package:discover --ansi || true",
+  "php artisan config:clear || true"
 ]
 
 [start]

@@ -47,25 +47,26 @@ const LeadersPage: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
       {/* Header */}
-      <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-[2.5rem] p-12 text-white shadow-xl shadow-orange-200">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center">
-              <Trophy size={32} className="text-white" />
+      <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-[2.5rem] p-6 sm:p-12 text-white shadow-xl shadow-orange-200">
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center shrink-0">
+              <Trophy size={24} className="text-white sm:hidden" />
+              <Trophy size={32} className="text-white hidden sm:block" />
             </div>
-            <div>
-              <h1 className="text-4xl font-extrabold tracking-tight">Top Contributors</h1>
-              <p className="text-orange-100 font-medium text-lg mt-1">
+            <div className="min-w-0">
+              <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight">Top Contributors</h1>
+              <p className="text-orange-100 font-medium text-sm sm:text-lg mt-1">
                 Most active members in our community
               </p>
             </div>
           </div>
           <button
             onClick={() => setShowKarmaModal(true)}
-            className="w-12 h-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center hover:bg-white/30 transition-colors"
+            className="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center hover:bg-white/30 transition-colors shrink-0"
             title="How Karma Points Work"
           >
-            <Info size={24} className="text-white" />
+            <Info size={20} className="text-white" />
           </button>
         </div>
       </div>
@@ -88,14 +89,15 @@ const LeadersPage: React.FC = () => {
         </div>
       ) : (
         <div className="bg-white border border-slate-200 rounded-[2.5rem] overflow-hidden shadow-xl">
-          <table className="w-full text-left">
+          <div className="overflow-x-auto">
+          <table className="w-full text-left min-w-[560px]">
             <thead>
               <tr className="bg-slate-50 border-b-2 border-slate-200">
-                <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Rank</th>
-                <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">User</th>
-                <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Major</th>
-                <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Role</th>
-                <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Karma Points</th>
+                <th className="px-4 sm:px-8 py-4 sm:py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Rank</th>
+                <th className="px-4 sm:px-8 py-4 sm:py-5 text-xs font-black text-slate-400 uppercase tracking-widest">User</th>
+                <th className="px-4 sm:px-8 py-4 sm:py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Major</th>
+                <th className="px-4 sm:px-8 py-4 sm:py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Role</th>
+                <th className="px-4 sm:px-8 py-4 sm:py-5 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Karma</th>
               </tr>
             </thead>
             <tbody>
@@ -119,7 +121,7 @@ const LeadersPage: React.FC = () => {
                         isTopThree ? 'bg-orange-50/30' : ''
                       }`}
                     >
-                      <td className="px-8 py-6">
+                      <td className="px-4 sm:px-8 py-4 sm:py-6">
                         <div className="flex items-center gap-2">
                           <span
                             className={`w-10 h-10 flex items-center justify-center rounded-xl font-bold text-sm ${
@@ -137,8 +139,8 @@ const LeadersPage: React.FC = () => {
                           {medal && <span className="text-2xl">{medal}</span>}
                         </div>
                       </td>
-                      <td className="px-8 py-6">
-                        <div className="flex items-center gap-4">
+                      <td className="px-4 sm:px-8 py-4 sm:py-6">
+                        <div className="flex items-center gap-3 sm:gap-4">
                           <Link
                             to={`/profile/${user.id}`}
                             className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center font-bold text-orange-600 border border-orange-100 cursor-pointer hover:scale-105 transition-transform"
@@ -156,12 +158,12 @@ const LeadersPage: React.FC = () => {
                           </div>
                         </div>
                       </td>
-                      <td className="px-8 py-6">
+                      <td className="px-4 sm:px-8 py-4 sm:py-6">
                         <span className="text-sm font-semibold text-slate-600">
                           {user.major || 'Student'}
                         </span>
                       </td>
-                      <td className="px-8 py-6">
+                      <td className="px-4 sm:px-8 py-4 sm:py-6">
                         <span className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest ${
                           user.role === 'admin'
                             ? 'bg-purple-100 text-purple-700'
@@ -174,7 +176,7 @@ const LeadersPage: React.FC = () => {
                           {user.role || 'member'}
                         </span>
                       </td>
-                      <td className="px-8 py-6 text-right">
+                      <td className="px-4 sm:px-8 py-4 sm:py-6 text-right">
                         <span className="inline-flex items-center gap-2 px-4 py-2 bg-orange-50 border border-orange-100 rounded-xl">
                           <Award className="text-orange-500" size={16} />
                           <span className="font-black text-slate-900">
@@ -188,29 +190,30 @@ const LeadersPage: React.FC = () => {
               )}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
       {/* Karma System Modal */}
       {showKarmaModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-4xl max-h-[85vh] overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg sm:max-w-4xl max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
-            <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-8 flex justify-between items-center text-white">
-              <div>
-                <h2 className="text-3xl font-extrabold tracking-tight">How Karma Points Work</h2>
-                <p className="text-orange-100 font-medium mt-1">Earn karma by being an active and positive member of the community</p>
+            <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-5 sm:p-8 flex justify-between items-center text-white gap-4">
+              <div className="min-w-0">
+                <h2 className="text-xl sm:text-3xl font-extrabold tracking-tight">How Karma Points Work</h2>
+                <p className="text-orange-100 font-medium mt-1 text-sm sm:text-base hidden sm:block">Earn karma by being an active and positive member of the community</p>
               </div>
               <button
                 onClick={() => setShowKarmaModal(false)}
-                className="w-10 h-10 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center hover:bg-white/30 transition-colors"
+                className="w-10 h-10 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center hover:bg-white/30 transition-colors shrink-0"
               >
                 <X size={20} className="text-white" />
               </button>
             </div>
 
             {/* Modal Content */}
-            <div className="p-8 overflow-y-auto max-h-[calc(85vh-120px)] space-y-6">
+            <div className="p-4 sm:p-8 overflow-y-auto max-h-[calc(90vh-100px)] space-y-6">
               {/* Earning Karma Section */}
               <div className="space-y-3">
                 <h3 className="text-lg font-bold text-emerald-700 flex items-center gap-2">

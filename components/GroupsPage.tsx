@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Send, Calendar as CalendarIcon, MessageSquare, Info, MoreHorizontal, Sparkles, Loader2, BookOpen, Mic, X, Users as UsersIcon, Clock, MapPin, Search, Archive, Unlock, Lock as LockIcon, Edit2, Trash2, Bell, UserX, Paperclip, File as FileIcon, Video, LogOut, Repeat, Plus, UserPlus, Check, ChevronDown } from 'lucide-react';
+import { Send, Calendar as CalendarIcon, MessageSquare, Info, MoreHorizontal, Sparkles, Loader2, BookOpen, Mic, X, Users as UsersIcon, Clock, MapPin, Search, Archive, Unlock, Lock as LockIcon, Edit2, Trash2, Bell, UserX, Paperclip, File as FileIcon, Video, LogOut, Repeat, Plus, UserPlus, Check, ChevronDown, ChevronLeft } from 'lucide-react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { StudyGroup, Message, User, GroupStatus, GroupMember } from '../types';
 import { geminiService } from '../services/geminiService';
@@ -700,7 +700,7 @@ const GroupsPage: React.FC = () => {
 
   return (
     <div className="h-full flex flex-col lg:flex-row gap-6 animate-in fade-in duration-500">
-      <div className="w-full lg:w-80 flex flex-col gap-4">
+      <div className={`${activeGroupId ? 'hidden lg:flex' : 'flex'} w-full lg:w-80 flex-col gap-4`}>
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Your Study Groups</h2>
           <button
@@ -872,14 +872,21 @@ const GroupsPage: React.FC = () => {
       <div className={`flex-1 bg-white border border-slate-200 rounded-[2.5rem] flex flex-col overflow-hidden shadow-sm relative ${activeGroup?.status === GroupStatus.ARCHIVED ? 'bg-slate-50/50' : ''}`}>
         {activeGroup ? (
           <>
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-white/50 backdrop-blur-md sticky top-0 z-10">
-              <div className="flex items-center gap-4">
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg ${activeGroup.status === GroupStatus.ARCHIVED ? 'bg-slate-400 shadow-slate-100' : 'bg-orange-500 shadow-orange-100'}`}>
+            <div className="p-3 sm:p-6 border-b border-slate-100 flex items-center justify-between bg-white/50 backdrop-blur-md sticky top-0 z-10 gap-2">
+              <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+                <button
+                  onClick={() => setActiveGroupId(null)}
+                  className="lg:hidden p-2 -ml-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all shrink-0"
+                  aria-label="Back to groups"
+                >
+                  <ChevronLeft size={20} />
+                </button>
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center text-white font-bold text-base sm:text-lg shadow-lg shrink-0 ${activeGroup.status === GroupStatus.ARCHIVED ? 'bg-slate-400 shadow-slate-100' : 'bg-orange-500 shadow-orange-100'}`}>
                   {activeGroup.name[0]}
                 </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-slate-900 text-lg leading-none">{activeGroup.name}</h3>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <h3 className="font-bold text-slate-900 text-base sm:text-lg leading-none truncate">{activeGroup.name}</h3>
                     {getStatusBadge(activeGroup.status)}
                   </div>
                   <div className="flex items-center gap-2 mt-1.5">
@@ -900,14 +907,15 @@ const GroupsPage: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                 {isLeader && activeGroup.pending_requests_count > 0 && (
                   <button
                     onClick={() => setShowPendingRequestsModal(true)}
-                    className="relative flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 text-amber-600 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-amber-100 transition-all"
+                    className="relative flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 bg-amber-50 border border-amber-200 text-amber-600 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-amber-100 transition-all"
                   >
-                    <Bell size={16} />
-                    <span>{activeGroup.pending_requests_count} Request{activeGroup.pending_requests_count !== 1 ? 's' : ''}</span>
+                    <Bell size={14} />
+                    <span className="hidden sm:inline">{activeGroup.pending_requests_count} Request{activeGroup.pending_requests_count !== 1 ? 's' : ''}</span>
+                    <span className="sm:hidden font-black">{activeGroup.pending_requests_count}</span>
                   </button>
                 )}
                 <button
@@ -960,7 +968,7 @@ const GroupsPage: React.FC = () => {
               </div>
             </div>
 
-            <div ref={chatContainerRef} onScroll={handleChatScroll} className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/30 relative">
+            <div ref={chatContainerRef} onScroll={handleChatScroll} className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6 bg-slate-50/30 relative">
               {activeGroup.status === GroupStatus.ARCHIVED && (
                  <div className="bg-slate-100 border border-slate-200 p-6 rounded-[2rem] text-center space-y-2 mb-4 animate-in slide-in-from-top-2">
                     <Archive size={32} className="mx-auto text-slate-400" />
@@ -1103,7 +1111,7 @@ const GroupsPage: React.FC = () => {
               <div ref={chatEndRef} />
             </div>
 
-            <form onSubmit={handleSendMessage} className={`p-6 bg-white border-t border-slate-100 ${activeGroup.status === GroupStatus.ARCHIVED ? 'pointer-events-none opacity-50 grayscale' : ''}`}>
+            <form onSubmit={handleSendMessage} className={`p-3 sm:p-6 bg-white border-t border-slate-100 ${activeGroup.status === GroupStatus.ARCHIVED ? 'pointer-events-none opacity-50 grayscale' : ''}`}>
               {selectedFile && (
                 <div className="mb-3 flex items-center gap-2 bg-orange-50 border border-orange-200 px-4 py-2 rounded-xl">
                   {selectedFile.type.startsWith('video/') ? <Video size={16} className="text-orange-600" /> : <FileIcon size={16} className="text-orange-600" />}

@@ -122,21 +122,21 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUserUpdate }) => {
   }
 
   const ModalShell = ({ title, subtitle, icon, children }: { title: string; subtitle: string; icon: React.ReactNode; children: React.ReactNode }) => (
-    <div className="fixed inset-0 z-[200] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
-        <div className="bg-slate-800 p-8 flex justify-between items-center text-white shrink-0">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">{icon}</div>
-            <div>
-              <h3 className="text-2xl font-black tracking-tight">{title}</h3>
-              <p className="text-slate-300 text-sm font-bold mt-0.5">{subtitle}</p>
+    <div className="fixed inset-0 z-[200] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
+      <div className="bg-white rounded-[2rem] sm:rounded-[2.5rem] shadow-2xl w-full max-w-2xl max-h-[92vh] sm:max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="bg-slate-800 p-5 sm:p-8 flex justify-between items-center text-white shrink-0">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/10 rounded-2xl flex items-center justify-center shrink-0">{icon}</div>
+            <div className="min-w-0">
+              <h3 className="text-lg sm:text-2xl font-black tracking-tight">{title}</h3>
+              <p className="text-slate-300 text-xs sm:text-sm font-bold mt-0.5 truncate">{subtitle}</p>
             </div>
           </div>
-          <button onClick={closeModal} className="bg-white/10 hover:bg-white/20 p-3 rounded-2xl transition-all">
-            <X size={20} />
+          <button onClick={closeModal} className="bg-white/10 hover:bg-white/20 p-2.5 sm:p-3 rounded-2xl transition-all shrink-0">
+            <X size={18} />
           </button>
         </div>
-        <div className="overflow-y-auto flex-1 p-8 space-y-6">
+        <div className="overflow-y-auto flex-1 p-4 sm:p-8 space-y-6">
           {loadingDetails ? (
             <div className="flex items-center justify-center py-16">
               <Loader2 className="animate-spin text-orange-500" size={36} />
@@ -150,36 +150,36 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUserUpdate }) => {
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
       <div className="relative">
-        <div className="h-48 w-full bg-gradient-to-r from-orange-400 to-orange-600 rounded-[3rem] shadow-xl shadow-orange-100"></div>
-        <div className="absolute top-8 left-12 flex flex-col md:flex-row items-start gap-6 w-[calc(100%-6rem)]">
-          <div className="w-32 h-32 bg-white rounded-[2.5rem] p-2 shadow-2xl shrink-0">
-            <div className="w-full h-full bg-orange-100 rounded-[2rem] flex items-center justify-center text-orange-600 text-4xl font-black border border-orange-200">
+        <div className="h-36 sm:h-48 w-full bg-gradient-to-r from-orange-400 to-orange-600 rounded-[2rem] sm:rounded-[3rem] shadow-xl shadow-orange-100"></div>
+        <div className="absolute top-4 sm:top-8 left-4 sm:left-12 flex flex-col md:flex-row items-start gap-3 sm:gap-6 w-[calc(100%-2rem)] sm:w-[calc(100%-6rem)]">
+          <div className="w-20 h-20 sm:w-32 sm:h-32 bg-white rounded-[1.5rem] sm:rounded-[2.5rem] p-1.5 sm:p-2 shadow-2xl shrink-0">
+            <div className="w-full h-full bg-orange-100 rounded-[1.25rem] sm:rounded-[2rem] flex items-center justify-center text-orange-600 text-2xl sm:text-4xl font-black border border-orange-200">
               {user.avatar || user.name[0]}
             </div>
           </div>
-          <div className="mt-12 space-y-1 flex-1 min-w-0">
-            <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-3xl font-black text-white tracking-tight">{user.name}</h1>
+          <div className="mt-0 sm:mt-12 space-y-1 flex-1 min-w-0">
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+              <h1 className="text-xl sm:text-3xl font-black text-white tracking-tight truncate">{user.name}</h1>
               {user.role === 'admin' && (
-                <span className="px-3 py-1 bg-purple-500 text-white text-xs font-black uppercase tracking-wider rounded-lg shadow-lg">Admin</span>
+                <span className="px-2 sm:px-3 py-0.5 sm:py-1 bg-purple-500 text-white text-[10px] sm:text-xs font-black uppercase tracking-wider rounded-lg shadow-lg">Admin</span>
               )}
               {user.role === 'moderator' && (
-                <span className="px-3 py-1 bg-blue-500 text-white text-xs font-black uppercase tracking-wider rounded-lg shadow-lg">Moderator</span>
+                <span className="px-2 sm:px-3 py-0.5 sm:py-1 bg-blue-500 text-white text-[10px] sm:text-xs font-black uppercase tracking-wider rounded-lg shadow-lg">Moderator</span>
               )}
               {user.role === 'leader' && (
-                <span className="px-3 py-1 bg-amber-500 text-white text-xs font-black uppercase tracking-wider rounded-lg shadow-lg">Leader</span>
+                <span className="px-2 sm:px-3 py-0.5 sm:py-1 bg-amber-500 text-white text-[10px] sm:text-xs font-black uppercase tracking-wider rounded-lg shadow-lg">Leader</span>
               )}
               {user.role === 'member' && (
-                <span className="px-3 py-1 bg-slate-500 text-white text-xs font-black uppercase tracking-wider rounded-lg shadow-lg">Member</span>
+                <span className="px-2 sm:px-3 py-0.5 sm:py-1 bg-slate-500 text-white text-[10px] sm:text-xs font-black uppercase tracking-wider rounded-lg shadow-lg">Member</span>
               )}
             </div>
-            <div className="flex flex-wrap items-center gap-4 text-white font-bold text-sm">
-              <div className="flex items-center gap-1.5"><MapPin size={14} className="text-white" /> {profile.location || 'Location not set'}</div>
-              <div className="flex items-center gap-1.5"><Mail size={14} className="text-white" /> {user.email}</div>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-white font-bold text-xs sm:text-sm">
+              <div className="flex items-center gap-1.5 min-w-0"><MapPin size={13} className="text-white shrink-0" /> <span className="truncate">{profile.location || 'Location not set'}</span></div>
+              <div className="hidden sm:flex items-center gap-1.5 min-w-0"><Mail size={13} className="text-white shrink-0" /> <span className="truncate">{user.email}</span></div>
             </div>
           </div>
         </div>
-        <div className="absolute top-20 right-12 hidden md:block">
+        <div className="absolute top-16 sm:top-20 right-4 sm:right-12 hidden md:block">
           {!isEditing ? (
             <button onClick={() => setIsEditing(true)} className="px-6 py-3 bg-white text-slate-900 border border-slate-200 rounded-2xl font-bold shadow-lg hover:bg-slate-50 transition-all flex items-center gap-2">
               <Edit2 size={18} /> Edit Profile
@@ -195,7 +195,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUserUpdate }) => {
         </div>
       </div>
 
-      <div className="mt-24 md:hidden px-4">
+      <div className="mt-4 md:hidden px-4">
         {!isEditing ? (
           <button onClick={() => setIsEditing(true)} className="w-full px-6 py-4 bg-white text-slate-900 border border-slate-200 rounded-2xl font-bold shadow-md flex items-center justify-center gap-2">
             <Edit2 size={18} /> Edit Profile

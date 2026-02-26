@@ -47,7 +47,7 @@ const SidebarLink: React.FC<{ to: string; icon: React.ReactNode; label: string }
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const isActive = location.pathname === to;
-  
+
   // Preserve search query across sidebar navigation
   const q = searchParams.get('q');
   const destination = q ? `${to}?q=${encodeURIComponent(q)}` : to;
@@ -56,8 +56,8 @@ const SidebarLink: React.FC<{ to: string; icon: React.ReactNode; label: string }
     <Link
       to={destination}
       className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-        isActive 
-          ? 'bg-orange-500 text-white shadow-lg shadow-orange-200' 
+        isActive
+          ? 'bg-orange-500 text-white shadow-lg shadow-orange-200'
           : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
       }`}
     >
@@ -319,7 +319,7 @@ const Layout: React.FC<{ children: React.ReactNode; user: User; onLogout: () => 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden">
       {isSidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
@@ -353,7 +353,7 @@ const Layout: React.FC<{ children: React.ReactNode; user: User; onLogout: () => 
         </nav>
 
         <div className="p-4 mt-auto">
-          <button 
+          <button
             onClick={onLogout}
             className="flex items-center gap-3 w-full px-4 py-3 text-slate-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-colors font-semibold"
           >
@@ -475,7 +475,7 @@ const Layout: React.FC<{ children: React.ReactNode; user: User; onLogout: () => 
 
           <div className="flex items-center gap-4">
             <div className="relative" ref={notifRef}>
-              <button 
+              <button
                 onClick={() => setNotifOpen(!isNotifOpen)}
                 className={`p-2 hover:bg-slate-100 rounded-xl relative transition-all ${isNotifOpen ? 'bg-slate-50 text-slate-900' : 'text-slate-400'}`}
               >

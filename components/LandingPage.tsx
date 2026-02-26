@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen, Users, Shield, ArrowRight, CheckCircle2, Sun, Moon } from 'lucide-react';
+import { BookOpen, Users, Shield, ArrowRight, CheckCircle2, Sun, Moon, UserPlus, Search, CalendarCheck } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 
 const LandingPage: React.FC = () => {
@@ -108,6 +108,63 @@ const LandingPage: React.FC = () => {
                 <p className="text-slate-500 font-medium leading-relaxed">{f.desc}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section id="how" className="py-24 px-6 md:px-12 bg-slate-50">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16 space-y-4">
+            <h2 className="text-4xl font-black text-slate-900">How it works</h2>
+            <p className="text-slate-500 font-medium max-w-2xl mx-auto">
+              Create your profile, discover your classmates, and start focused group sessions in minutes.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                icon: <UserPlus className="text-orange-500" />,
+                title: '1. Sign up with your AU email',
+                desc: 'Create an account, set your major and profile, then verify your student email to join the trusted community.'
+              },
+              {
+                icon: <Search className="text-blue-500" />,
+                title: '2. Find or create a study group',
+                desc: 'Browse by subject, faculty, and schedule. If a group does not exist, create one and invite classmates.'
+              },
+              {
+                icon: <CalendarCheck className="text-emerald-500" />,
+                title: '3. Meet, study, and track progress',
+                desc: 'Join sessions, share updates in group chat, and build consistency with regular meetings and activity.'
+              }
+            ].map((item, idx) => (
+              <div key={idx} className="p-8 bg-white rounded-[2rem] border border-slate-200 shadow-sm hover:shadow-lg transition-all">
+                <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center mb-5">
+                  {item.icon}
+                </div>
+                <h3 className="text-lg font-black text-slate-900 mb-3">{item.title}</h3>
+                <p className="text-slate-500 font-medium leading-relaxed">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Contact */}
+      <section className="py-16 px-6 md:px-12 bg-white border-t border-slate-100">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-orange-50 border border-orange-100 rounded-3xl p-8 text-center">
+            <p className="text-xs font-black text-orange-600 uppercase tracking-widest mb-2">Need help?</p>
+            <h3 className="text-2xl font-black text-slate-900 mb-2">Contact Admin Support</h3>
+            <p className="text-slate-500 font-medium mb-4">For account issues, access requests, or moderation concerns.</p>
+            <a
+              href="mailto:studyhub.studygroupfinder@gmail.com"
+              className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-orange-500 text-white font-black text-sm uppercase tracking-widest hover:bg-orange-600 transition-all"
+            >
+              studyhub.studygroupfinder@gmail.com
+            </a>
           </div>
         </div>
       </section>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Edit2, Trash2, X, Mail, User, BookOpen, MapPin, Loader2, UserCircle, AlertCircle, RefreshCw, Clock, Eye, Shield, Ban, Key, Users, Calendar, AlertTriangle, UserCheck } from 'lucide-react';
+import { Search, Edit2, Trash2, X, Mail, User, BookOpen, MapPin, Loader2, UserCircle, AlertCircle, RefreshCw, Clock, Eye, Shield, Ban, Key, Users, Calendar, AlertTriangle, UserCheck, Award, Crown, CheckCircle, XCircle } from 'lucide-react';
 import AdminLayout from './AdminLayout';
+import { API_CONFIG } from '../../constants';
 
 interface UserData {
   id: number;
@@ -17,6 +18,7 @@ interface UserData {
   warnings?: number;
   banned?: boolean;
   warning_expires_at?: string | null;
+  karma_points?: number;
 }
 
 interface UserProfile {
@@ -43,6 +45,7 @@ const AdminUsers: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [karmaSort, setKarmaSort] = useState<'' | 'most' | 'least'>('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalUsers, setTotalUsers] = useState(0);
@@ -76,6 +79,14 @@ const AdminUsers: React.FC = () => {
   const [warnReason, setWarnReason] = useState('');
   const [banningUser, setBanningUser] = useState<UserData | null>(null);
   const [banReason, setBanReason] = useState('');
+
+  // Leader requests tab
+  const [activeTab, setActiveTab] = useState<'users' | 'requests'>('users');
+  const [leaderRequests, setLeaderRequests] = useState<any[]>([]);
+  const [loadingRequests, setLoadingRequests] = useState(false);
+  const [requestStatusFilter, setRequestStatusFilter] = useState('pending');
+  const [rejectingRequest, setRejectingRequest] = useState<any | null>(null);
+  const [rejectNote, setRejectNote] = useState('');
 
   // Helper function to calculate days remaining
   const getDaysRemaining = (dateStr: string | null | undefined): number | null => {
@@ -111,6 +122,12 @@ const AdminUsers: React.FC = () => {
     return () => clearInterval(interval);
   }, [currentPage, searchQuery, roleFilter, statusFilter]);
 
+  useEffect(() => {
+    if (activeTab === 'requests') {
+      fetchLeaderRequests();
+    }
+  }, [activeTab, requestStatusFilter]);
+
   const fetchUsers = async (silent = false) => {
     try {
       if (!silent) {
@@ -131,7 +148,7 @@ const AdminUsers: React.FC = () => {
       });
 
       const response = await fetch(
-        `http://localhost:8000/api/admin/users?${params}`,
+        `${API_CONFIG.BASE_URL}/admin/users?${params}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -194,7 +211,7 @@ const AdminUsers: React.FC = () => {
       const token = user.token;
 
       const response = await fetch(
-        `http://localhost:8000/api/admin/users/${editingUser.id}`,
+        `${API_CONFIG.BASE_URL}/admin/users/${editingUser.id}`,
         {
           method: 'PUT',
           headers: {
@@ -226,7 +243,7 @@ const AdminUsers: React.FC = () => {
       const token = user.token;
 
       const response = await fetch(
-        `http://localhost:8000/api/admin/users/${id}`,
+        `${API_CONFIG.BASE_URL}/admin/users/${id}`,
         {
           method: 'DELETE',
           headers: {
@@ -259,7 +276,7 @@ const AdminUsers: React.FC = () => {
       const token = user.token;
 
       const response = await fetch(
-        `http://localhost:8000/api/admin/users/${userId}/profile`,
+        `${API_CONFIG.BASE_URL}/admin/users/${userId}/profile`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -292,7 +309,7 @@ const AdminUsers: React.FC = () => {
       const token = user.token;
 
       const response = await fetch(
-        `http://localhost:8000/api/admin/users/${suspendingUser.id}/suspend`,
+        `${API_CONFIG.BASE_URL}/admin/users/${suspendingUser.id}/suspend`,
         {
           method: 'POST',
           headers: {
@@ -331,7 +348,7 @@ const AdminUsers: React.FC = () => {
       const token = user.token;
 
       const response = await fetch(
-        `http://localhost:8000/api/admin/users/${assigningRole.id}/assign-role`,
+        `${API_CONFIG.BASE_URL}/admin/users/${assigningRole.id}/assign-role`,
         {
           method: 'POST',
           headers: {
@@ -368,7 +385,7 @@ const AdminUsers: React.FC = () => {
       const token = user.token;
 
       const response = await fetch(
-        `http://localhost:8000/api/admin/users/${userId}/reset-password`,
+        `${API_CONFIG.BASE_URL}/admin/users/${userId}/reset-password`,
         {
           method: 'POST',
           headers: {
@@ -399,7 +416,7 @@ const AdminUsers: React.FC = () => {
       const token = user.token;
 
       const response = await fetch(
-        `http://localhost:8000/api/admin/users/${warningUser.id}/warn`,
+        `${API_CONFIG.BASE_URL}/admin/users/${warningUser.id}/warn`,
         {
           method: 'POST',
           headers: {
@@ -438,7 +455,7 @@ const AdminUsers: React.FC = () => {
       const token = user.token;
 
       const response = await fetch(
-        `http://localhost:8000/api/admin/users/${banningUser.id}/ban`,
+        `${API_CONFIG.BASE_URL}/admin/users/${banningUser.id}/ban`,
         {
           method: 'POST',
           headers: {
@@ -475,7 +492,7 @@ const AdminUsers: React.FC = () => {
       const token = user.token;
 
       const response = await fetch(
-        `http://localhost:8000/api/admin/users/${userId}/unban`,
+        `${API_CONFIG.BASE_URL}/admin/users/${userId}/unban`,
         {
           method: 'POST',
           headers: {
@@ -507,7 +524,7 @@ const AdminUsers: React.FC = () => {
       const token = user.token;
 
       const response = await fetch(
-        `http://localhost:8000/api/admin/users/${userId}/unsuspend`,
+        `${API_CONFIG.BASE_URL}/admin/users/${userId}/unsuspend`,
         {
           method: 'POST',
           headers: {
@@ -523,6 +540,59 @@ const AdminUsers: React.FC = () => {
       fetchUsers();
     } catch (err: any) {
       alert(err.message || 'Failed to unsuspend user');
+    }
+  };
+
+  const getToken = (): string => {
+    const s = localStorage.getItem('admin_auth');
+    return s ? JSON.parse(s).token : '';
+  };
+
+  const fetchLeaderRequests = async () => {
+    setLoadingRequests(true);
+    try {
+      const res = await fetch(
+        `${API_CONFIG.BASE_URL}/admin/leader-requests?status=${requestStatusFilter}`,
+        { headers: { 'Authorization': `Bearer ${getToken()}`, 'Content-Type': 'application/json' } }
+      );
+      if (!res.ok) throw new Error('Failed to fetch');
+      const data = await res.json();
+      setLeaderRequests(data.data || []);
+    } catch (err) {
+      console.error('Failed to fetch leader requests:', err);
+    } finally {
+      setLoadingRequests(false);
+    }
+  };
+
+  const handleApproveRequest = async (id: number) => {
+    try {
+      const res = await fetch(`${API_CONFIG.BASE_URL}/admin/leader-requests/${id}/approve`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${getToken()}`, 'Content-Type': 'application/json' }
+      });
+      if (!res.ok) throw new Error('Failed to approve');
+      fetchLeaderRequests();
+      fetchUsers();
+    } catch (err: any) {
+      alert(err.message || 'Failed to approve request');
+    }
+  };
+
+  const handleRejectRequest = async () => {
+    if (!rejectingRequest) return;
+    try {
+      const res = await fetch(`${API_CONFIG.BASE_URL}/admin/leader-requests/${rejectingRequest.id}/reject`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${getToken()}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ note: rejectNote })
+      });
+      if (!res.ok) throw new Error('Failed to reject');
+      setRejectingRequest(null);
+      setRejectNote('');
+      fetchLeaderRequests();
+    } catch (err: any) {
+      alert(err.message || 'Failed to reject request');
     }
   };
 
@@ -554,8 +624,26 @@ const AdminUsers: React.FC = () => {
             </div>
           </div>
 
+          {/* Tab Toggle */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setActiveTab('users')}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-sm transition-all ${activeTab === 'users' ? 'bg-purple-600 text-white shadow-md' : 'bg-white border-2 border-slate-200 text-slate-600 hover:border-purple-300'}`}
+            >
+              <Users size={16} />
+              Users
+            </button>
+            <button
+              onClick={() => setActiveTab('requests')}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-sm transition-all ${activeTab === 'requests' ? 'bg-purple-600 text-white shadow-md' : 'bg-white border-2 border-slate-200 text-slate-600 hover:border-purple-300'}`}
+            >
+              <Crown size={16} />
+              Leader Requests
+            </button>
+          </div>
+
           {/* Search */}
-          <div className="relative w-full md:w-96">
+          {activeTab === 'users' && <div className="relative w-full md:w-96">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
             <input
               type="text"
@@ -567,10 +655,10 @@ const AdminUsers: React.FC = () => {
               }}
               className="w-full pl-12 pr-4 py-3 bg-white border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all outline-none font-bold text-slate-900 placeholder:text-slate-400"
             />
-          </div>
+          </div>}
 
           {/* Filters */}
-          <div className="flex flex-col md:flex-row gap-4">
+          {activeTab === 'users' && <div className="flex flex-col md:flex-row gap-4">
             {/* Role Filter */}
             <div className="relative flex-1">
               <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
@@ -607,11 +695,106 @@ const AdminUsers: React.FC = () => {
                 <option value="banned">Banned Users</option>
               </select>
             </div>
-          </div>
+
+            {/* Karma Sort */}
+            <div className="relative flex-1">
+              <Award className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+              <select
+                value={karmaSort}
+                onChange={(e) => setKarmaSort(e.target.value as '' | 'most' | 'least')}
+                className="w-full pl-12 pr-10 py-3 bg-white border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all outline-none font-bold text-slate-900 appearance-none cursor-pointer"
+              >
+                <option value="">Sort by Karma</option>
+                <option value="most">Most Karma ↓</option>
+                <option value="least">Least Karma ↑</option>
+              </select>
+            </div>
+          </div>}
         </div>
 
+        {/* Leader Requests Panel */}
+        {activeTab === 'requests' && (
+          <div className="space-y-4">
+            {/* Filter */}
+            <div className="flex items-center gap-3">
+              {(['pending', 'approved', 'rejected', 'all'] as const).map(s => (
+                <button
+                  key={s}
+                  onClick={() => setRequestStatusFilter(s)}
+                  className={`px-4 py-2 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${requestStatusFilter === s ? 'bg-purple-600 text-white shadow-md' : 'bg-white border-2 border-slate-200 text-slate-500 hover:border-purple-300'}`}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+
+            <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm overflow-hidden">
+              {loadingRequests ? (
+                <div className="p-12 text-center">
+                  <Loader2 size={32} className="animate-spin text-purple-600 mx-auto mb-4" />
+                  <p className="text-slate-600 font-bold">Loading requests...</p>
+                </div>
+              ) : leaderRequests.length === 0 ? (
+                <div className="p-12 text-center">
+                  <Crown className="w-16 h-16 text-slate-200 mx-auto mb-4" />
+                  <p className="text-slate-500 font-bold">No {requestStatusFilter !== 'all' ? requestStatusFilter : ''} leader requests</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-100">
+                  {leaderRequests.map((req: any) => (
+                    <div key={req.id} className="p-5 flex items-start gap-4">
+                      <div className="w-10 h-10 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center font-bold text-sm flex-shrink-0">
+                        {req.user?.name?.[0] ?? '?'}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-black text-slate-900">{req.user?.name}</span>
+                          <span className="text-slate-400 text-xs">{req.user?.email}</span>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                            req.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                            req.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
+                            'bg-red-100 text-red-700'
+                          }`}>{req.status}</span>
+                          {req.user?.karma_points !== undefined && (
+                            <span className="text-[10px] font-bold text-slate-400">{req.user.karma_points} karma</span>
+                          )}
+                        </div>
+                        {req.reason && (
+                          <p className="text-sm text-slate-600 mt-1 font-medium">"{req.reason}"</p>
+                        )}
+                        {req.admin_note && (
+                          <p className="text-xs text-red-500 font-bold mt-1">Admin note: {req.admin_note}</p>
+                        )}
+                        <p className="text-xs text-slate-400 mt-1">{new Date(req.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                      </div>
+                      {req.status === 'pending' && isAdmin() && (
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <button
+                            onClick={() => handleApproveRequest(req.id)}
+                            className="flex items-center gap-1.5 px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-xs transition-all"
+                          >
+                            <CheckCircle size={14} />
+                            Approve
+                          </button>
+                          <button
+                            onClick={() => { setRejectingRequest(req); setRejectNote(''); }}
+                            className="flex items-center gap-1.5 px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl font-black text-xs transition-all"
+                          >
+                            <XCircle size={14} />
+                            Reject
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Users Table */}
-        <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm overflow-hidden">
+        {activeTab === 'users' && <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm overflow-hidden">
           {loading ? (
             <div className="p-12 text-center">
               <Loader2 size={32} className="animate-spin text-purple-600 mx-auto mb-4" />
@@ -638,7 +821,14 @@ const AdminUsers: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {users.map((user) => (
+                    {(karmaSort
+                      ? [...users].sort((a, b) => {
+                          const ka = a.karma_points ?? 0;
+                          const kb = b.karma_points ?? 0;
+                          return karmaSort === 'most' ? kb - ka : ka - kb;
+                        })
+                      : users
+                    ).map((user) => (
                       <tr key={user.id} className="hover:bg-slate-50 transition-colors">
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
@@ -646,7 +836,14 @@ const AdminUsers: React.FC = () => {
                               {user.name[0]}
                             </div>
                             <div>
-                              <p className="font-bold text-slate-900">{user.name}</p>
+                              <div className="flex items-center gap-2">
+                                <p className="font-bold text-slate-900">{user.name}</p>
+                                {user.karma_points !== undefined && (
+                                  <span className="flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-full text-xs font-black">
+                                    <Award size={11} /> {user.karma_points}
+                                  </span>
+                                )}
+                              </div>
                               <p className="text-sm text-slate-500">{user.email}</p>
                             </div>
                           </div>
@@ -688,9 +885,15 @@ const AdminUsers: React.FC = () => {
                           <span className="text-sm font-bold text-slate-700">{user.major || 'N/A'}</span>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-bold text-purple-600">{user.created_groups_count}</span>
-                            <span className="text-xs text-slate-400">created</span>
+                          <div className="flex flex-col gap-0.5">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-sm font-bold text-purple-600">{user.created_groups_count}</span>
+                              <span className="text-xs text-slate-400">created</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-sm font-bold text-blue-600">{user.joined_groups_count}</span>
+                              <span className="text-xs text-slate-400">joined</span>
+                            </div>
                           </div>
                         </td>
                         <td className="px-6 py-4">
@@ -707,93 +910,89 @@ const AdminUsers: React.FC = () => {
                             >
                               <Eye size={16} />
                             </button>
-                            <button
-                              onClick={() => handleEdit(user)}
-                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                              title="Edit user"
-                            >
-                              <Edit2 size={16} />
-                            </button>
-                            {user.email !== 'admin@au.edu' && (
+                            {isAdmin() && (
                               <>
-                                {/* Role Assignment - Admin Only */}
-                                {isAdmin() && (
-                                  <button
-                                    onClick={() => {
-                                      setAssigningRole(user);
-                                      setNewRole(user.role);
-                                    }}
-                                    className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"
-                                    title="Assign role"
-                                  >
-                                    <Shield size={16} />
-                                  </button>
-                                )}
-
-                                {/* Moderation Actions - Only for regular users OR if admin */}
-                                {(canModerate(user) || isAdmin()) && (
+                                <button
+                                  onClick={() => handleEdit(user)}
+                                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                  title="Edit user"
+                                >
+                                  <Edit2 size={16} />
+                                </button>
+                                {user.email !== 'admin@au.edu' && (
                                   <>
-                                    {user.banned ? (
-                                      <button
-                                        onClick={() => handleUnbanUser(user.id)}
-                                        className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-all"
-                                        title="Unban user"
-                                      >
-                                        <UserCheck size={16} />
-                                      </button>
-                                    ) : user.suspended_until && new Date(user.suspended_until) > new Date() ? (
-                                      <button
-                                        onClick={() => handleUnsuspendUser(user.id)}
-                                        className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-all"
-                                        title="Lift suspension"
-                                      >
-                                        <UserCheck size={16} />
-                                      </button>
-                                    ) : (
+                                    <button
+                                      onClick={() => {
+                                        setAssigningRole(user);
+                                        setNewRole(user.role);
+                                      }}
+                                      className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"
+                                      title="Assign role"
+                                    >
+                                      <Shield size={16} />
+                                    </button>
+
+                                    {canModerate(user) && (
                                       <>
+                                        {user.banned ? (
+                                          <button
+                                            onClick={() => handleUnbanUser(user.id)}
+                                            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-all"
+                                            title="Unban user"
+                                          >
+                                            <UserCheck size={16} />
+                                          </button>
+                                        ) : user.suspended_until && new Date(user.suspended_until) > new Date() ? (
+                                          <button
+                                            onClick={() => handleUnsuspendUser(user.id)}
+                                            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-all"
+                                            title="Lift suspension"
+                                          >
+                                            <UserCheck size={16} />
+                                          </button>
+                                        ) : (
+                                          <>
+                                            <button
+                                              onClick={() => setWarningUser(user)}
+                                              className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
+                                              title="Warn user"
+                                            >
+                                              <AlertTriangle size={16} />
+                                            </button>
+                                            <button
+                                              onClick={() => setSuspendingUser(user)}
+                                              className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-all"
+                                              title="Suspend user"
+                                            >
+                                              <Ban size={16} />
+                                            </button>
+                                            <button
+                                              onClick={() => setBanningUser(user)}
+                                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                              title="Ban user permanently"
+                                            >
+                                              <Ban size={16} className="fill-current" />
+                                            </button>
+                                          </>
+                                        )}
                                         <button
-                                          onClick={() => setWarningUser(user)}
-                                          className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
-                                          title="Warn user"
+                                          onClick={() => handleResetPassword(user.id)}
+                                          className="p-2 text-teal-600 hover:bg-teal-50 rounded-lg transition-all"
+                                          title="Reset password"
                                         >
-                                          <AlertTriangle size={16} />
-                                        </button>
-                                        <button
-                                          onClick={() => setSuspendingUser(user)}
-                                          className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-all"
-                                          title="Suspend user"
-                                        >
-                                          <Ban size={16} />
-                                        </button>
-                                        <button
-                                          onClick={() => setBanningUser(user)}
-                                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                                          title="Ban user permanently"
-                                        >
-                                          <Ban size={16} className="fill-current" />
+                                          <Key size={16} />
                                         </button>
                                       </>
                                     )}
-                                    {/* Password Reset - Only for regular users OR if admin */}
+
                                     <button
-                                      onClick={() => handleResetPassword(user.id)}
-                                      className="p-2 text-teal-600 hover:bg-teal-50 rounded-lg transition-all"
-                                      title="Reset password"
+                                      onClick={() => setDeleteConfirm(user.id)}
+                                      className="p-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-all"
+                                      title="Delete user"
                                     >
-                                      <Key size={16} />
+                                      <Trash2 size={16} />
                                     </button>
                                   </>
-                                )}
-
-                                {/* Delete - Admin Only */}
-                                {isAdmin() && (
-                                  <button
-                                    onClick={() => setDeleteConfirm(user.id)}
-                                    className="p-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-all"
-                                    title="Delete user"
-                                  >
-                                    <Trash2 size={16} />
-                                  </button>
                                 )}
                               </>
                             )}
@@ -807,10 +1006,10 @@ const AdminUsers: React.FC = () => {
 
             </>
           )}
-        </div>
+        </div>}
 
         {/* Pagination */}
-        {totalPages > 1 && (
+        {activeTab === 'users' && totalPages > 1 && (
           <div className="bg-white rounded-2xl border-2 border-slate-200 p-4 shadow-sm">
             <div className="flex items-center justify-between">
               <p className="text-sm text-slate-600 font-medium">
@@ -836,6 +1035,41 @@ const AdminUsers: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Reject Leader Request Modal */}
+      {rejectingRequest && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-6">
+          <div className="bg-white rounded-[2rem] w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="bg-red-500 p-6 text-white flex justify-between items-center">
+              <div>
+                <h3 className="text-xl font-black">Reject Leader Request</h3>
+                <p className="text-red-100 text-sm font-bold mt-0.5">{rejectingRequest.user?.name}</p>
+              </div>
+              <button onClick={() => setRejectingRequest(null)} className="bg-white/20 hover:bg-white/30 p-2 rounded-xl"><X size={20} /></button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Reason for rejection (optional)</label>
+                <textarea
+                  rows={3}
+                  className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl outline-none font-bold text-sm resize-none focus:border-red-400"
+                  placeholder="Provide a reason to help the user understand..."
+                  value={rejectNote}
+                  onChange={e => setRejectNote(e.target.value)}
+                />
+              </div>
+              <div className="flex gap-3">
+                <button onClick={handleRejectRequest} className="flex-1 flex items-center justify-center gap-2 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-black text-sm uppercase tracking-widest transition-all">
+                  <XCircle size={16} /> Reject
+                </button>
+                <button onClick={() => setRejectingRequest(null)} className="px-6 py-3 bg-slate-100 text-slate-600 rounded-xl font-black text-sm uppercase tracking-widest hover:bg-slate-200 transition-all">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Edit User Modal */}
       {editingUser && (
@@ -1214,7 +1448,6 @@ const AdminUsers: React.FC = () => {
                   <option value="member">Member</option>
                   <option value="leader">Leader</option>
                   <option value="moderator">Moderator</option>
-                  <option value="admin">Admin</option>
                 </select>
               </div>
 
@@ -1236,16 +1469,8 @@ const AdminUsers: React.FC = () => {
                   )}
                   {newRole === 'moderator' && (
                     <>
-                      <li>• Can review reports</li>
-                      <li>• Can moderate content</li>
-                      <li>• Can suspend users temporarily</li>
-                    </>
-                  )}
-                  {newRole === 'admin' && (
-                    <>
-                      <li>• Full platform access</li>
-                      <li>• Can manage all users and groups</li>
-                      <li>• Can access analytics dashboard</li>
+                      <li>• Can view all admin pages</li>
+                      <li>• Can resolve user reports</li>
                     </>
                   )}
                 </ul>

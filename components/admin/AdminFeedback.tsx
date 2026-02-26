@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Star, Trash2, Loader2, MessageSquare, AlertCircle, RefreshCw, Clock } from 'lucide-react';
 import AdminLayout from './AdminLayout';
+import { API_CONFIG } from '../../constants';
 
 interface FeedbackData {
   id: number;
@@ -52,7 +53,7 @@ const AdminFeedback: React.FC = () => {
       const token = user.token;
 
       const response = await fetch(
-        `http://localhost:8000/api/admin/feedback?page=${currentPage}`,
+        `${API_CONFIG.BASE_URL}/admin/feedback?page=${currentPage}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -100,7 +101,7 @@ const AdminFeedback: React.FC = () => {
       const token = user.token;
 
       const response = await fetch(
-        `http://localhost:8000/api/admin/feedback/${id}`,
+        `${API_CONFIG.BASE_URL}/admin/feedback/${id}`,
         {
           method: 'DELETE',
           headers: {

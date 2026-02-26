@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, UsersIcon, MessageSquare, AlertTriangle, BarChart3, Settings, LogOut, Shield, Menu, X, Bell, Calendar, Star, FileText, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, Users, UsersIcon, AlertTriangle, BarChart3, LogOut, Shield, Menu, X, Bell, FileText, Sun, Moon } from 'lucide-react';
 import NotificationDropdown from '../NotificationDropdown';
 import { AppNotification } from '../../types';
+import { API_CONFIG } from '../../constants';
 import { apiService } from '../../services/apiService';
 import { useTheme } from '../../contexts/ThemeContext';
 
@@ -56,13 +57,13 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
       // Use admin-specific notification endpoints
       const [listResponse, countResponse] = await Promise.all([
-        fetch('http://localhost:8000/api/admin/notifications', {
+        fetch('${API_CONFIG.BASE_URL}/admin/notifications', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Accept': 'application/json'
           }
         }),
-        fetch('http://localhost:8000/api/admin/notifications/unread-count', {
+        fetch('${API_CONFIG.BASE_URL}/admin/notifications/unread-count', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Accept': 'application/json'
@@ -109,7 +110,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       }
 
       // Use admin-specific mark-read endpoint
-      await fetch('http://localhost:8000/api/admin/notifications/mark-read', {
+      await fetch('${API_CONFIG.BASE_URL}/admin/notifications/mark-read', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -133,10 +134,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { path: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/admin/users', icon: Users, label: 'User Management' },
     { path: '/admin/groups', icon: UsersIcon, label: 'Group Management' },
-    { path: '/admin/events', icon: Calendar, label: 'Meetings Management' },
-    { path: '/admin/ratings', icon: Star, label: 'Ratings Management' },
     { path: '/admin/reports', icon: AlertTriangle, label: 'User Reports' },
-    { path: '/admin/moderation', icon: FileText, label: 'Moderation Activity' },
+    { path: '/admin/moderation', icon: FileText, label: 'Activity Log' },
     { path: '/admin/analytics', icon: BarChart3, label: 'Analytics' },
   ];
 

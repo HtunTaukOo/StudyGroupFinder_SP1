@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Star, Users, Trash2, Search, Filter, Loader2, TrendingUp, RefreshCw, Clock } from 'lucide-react';
 import AdminLayout from './AdminLayout';
+import { API_CONFIG } from '../../constants';
 
 interface Rating {
   id: string;
@@ -71,7 +72,7 @@ const AdminRatings: React.FC = () => {
         ...(ratingTypeFilter && { rating_type: ratingTypeFilter }),
       });
 
-      const response = await fetch(`http://localhost:8000/api/admin/ratings?${params}`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/admin/ratings?${params}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -121,7 +122,7 @@ const AdminRatings: React.FC = () => {
       const user = JSON.parse(userStr);
       const token = user.token;
 
-      const response = await fetch(`http://localhost:8000/api/admin/ratings/${ratingId}`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/admin/ratings/${ratingId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

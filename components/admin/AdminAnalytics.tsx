@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, Users, UsersIcon, MessageSquare, BarChart3, Loader2, RefreshCw, Clock, Star, Calendar, Activity, Percent, AlertTriangle } from 'lucide-react';
+import { TrendingUp, Users, UsersIcon, MessageSquare, BarChart3, Loader2, RefreshCw, Clock, Star, Calendar, Activity, Percent, AlertTriangle, BookOpen } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import AdminLayout from './AdminLayout';
+import { API_CONFIG } from '../../constants';
 
 interface AnalyticsData {
   user_growth: Array<{ date: string; count: number }>;
@@ -21,6 +22,10 @@ interface AnalyticsData {
   most_active_time_for_events: Array<{ hour: number; count: number }>;
   average_group_size: number;
   time_range: string;
+  karma_over_time: Array<{ date: string; earned: number; deducted: number }>;
+  karma_by_reason: Array<{ reason: string; occurrences: number; total_points: number }>;
+  top_karma_users: Array<{ id: number; name: string; karma_points: number }>;
+  users_by_major?: Array<{ major: string; count: number }>;
 }
 
 const AdminAnalytics: React.FC = () => {
@@ -53,7 +58,7 @@ const AdminAnalytics: React.FC = () => {
       const user = JSON.parse(userStr);
       const token = user.token;
 
-      const response = await fetch(`http://localhost:8000/api/admin/analytics?range=${timeRange}`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/admin/analytics?range=${timeRange}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -232,7 +237,9 @@ const AdminAnalytics: React.FC = () => {
                   <h3 className="font-black">Retention Rate</h3>
                 </div>
                 <p className="text-4xl font-black mb-1">{analytics.user_retention_rate.toFixed(1)}%</p>
-                <p className="text-purple-100 text-sm font-medium">Users active in last 30 days</p>
+                <p className="text-purple-100 text-sm font-medium">
+                  Users active in last {timeRange === 'daily' ? '24 hours' : timeRange === 'weekly' ? '7 days' : '30 days'}
+                </p>
               </div>
             )}
             {analytics.average_group_size !== undefined && (
@@ -513,6 +520,87 @@ const AdminAnalytics: React.FC = () => {
             </div>
           )}
         </div>
+
+        {/* ── Users by Major ── */}
+        {analytics?.users_by_major && analytics.users_by_major.length > 0 && (
+          <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <BookOpen className="text-teal-600" size={24} />
+                <div>
+                  <h3 className="font-black text-slate-900">Users by Major</h3>
+                  <p className="text-sm text-slate-500">Top 10 most common student majors</p>
+                </div>
+              </div>
+            </div>
+            <div className="p-6">
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={analytics.users_by_major} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis type="number" stroke="#64748b" style={{ fontSize: '12px', fontWeight: 'bold' }} />
+                  <YAxis
+                    type="category"
+                    dataKey="major"
+                    stroke="#64748b"
+                    style={{ fontSize: '12px', fontWeight: 'bold' }}
+                    width={120}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Bar dataKey="count" fill="#14b8a6" radius={[0, 8, 8, 0]} name="Students" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+
+        {/* ── Karma Over Time ── */}
+        {analytics?.karma_over_time && (
+          <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <TrendingUp className="text-emerald-600" size={24} />
+                <div>
+                  <h3 className="font-black text-slate-900">Karma Over Time</h3>
+                  <p className="text-sm text-slate-500">Points earned vs deducted per day</p>
+                </div>
+              </div>
+            </div>
+            <div className="p-6">
+              {analytics.karma_over_time.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <AreaChart data={analytics.karma_over_time}>
+                    <defs>
+                      <linearGradient id="colorEarned" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="colorDeducted" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis
+                      dataKey="date"
+                      tickFormatter={(v) => new Date(v).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                      stroke="#64748b"
+                      style={{ fontSize: '12px', fontWeight: 'bold' }}
+                    />
+                    <YAxis stroke="#64748b" style={{ fontSize: '12px', fontWeight: 'bold' }} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend wrapperStyle={{ fontSize: '14px', fontWeight: 'bold' }} />
+                    <Area type="monotone" dataKey="earned" stroke="#10b981" fillOpacity={1} fill="url(#colorEarned)" name="Earned" />
+                    <Area type="monotone" dataKey="deducted" stroke="#ef4444" fillOpacity={1} fill="url(#colorDeducted)" name="Deducted" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[300px]">
+                  <p className="text-slate-400 font-medium">No karma activity in this period</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </AdminLayout>
   );

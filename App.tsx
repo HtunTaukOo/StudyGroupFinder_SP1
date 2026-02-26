@@ -29,14 +29,13 @@ import LandingPage from './components/LandingPage';
 import LoginPage from './components/LoginPage';
 import SignupPage from './components/SignupPage';
 import EmailVerifyPage from './components/EmailVerifyPage';
+import ResetPasswordPage from './components/ResetPasswordPage';
 import NotificationDropdown from './components/NotificationDropdown';
 import EmailVerificationBanner from './components/EmailVerificationBanner';
 import AdminLogin from './components/admin/AdminLogin';
 import AdminDashboard from './components/admin/AdminDashboard';
 import AdminUsers from './components/admin/AdminUsers';
 import AdminGroups from './components/admin/AdminGroups';
-import AdminEvents from './components/admin/AdminEvents';
-import AdminRatings from './components/admin/AdminRatings';
 import AdminReports from './components/admin/AdminReports';
 import AdminAnalytics from './components/admin/AdminAnalytics';
 import AdminModerationActivity from './components/admin/AdminModerationActivity';
@@ -567,6 +566,7 @@ const App: React.FC = () => {
         <Route path="/login" element={user ? <Navigate to="/home" /> : <LoginPage onLogin={handleLogin} />} />
         <Route path="/signup" element={user ? <Navigate to="/home" /> : <SignupPage onSignup={handleLogin} />} />
         <Route path="/email/verify/:id/:hash" element={<EmailVerifyPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         <Route path="/home" element={
           user ? <Layout user={user} onLogout={handleLogout} showSearch={true}><HomePage /></Layout> : <Navigate to="/login" />
@@ -603,12 +603,6 @@ const App: React.FC = () => {
         } />
         <Route path="/admin/groups" element={
           isAdminAuth() ? <AdminGroups /> : <Navigate to="/admin/login" />
-        } />
-        <Route path="/admin/events" element={
-          isAdminAuth() ? <AdminEvents /> : <Navigate to="/admin/login" />
-        } />
-        <Route path="/admin/ratings" element={
-          isAdminAuth() ? <AdminRatings /> : <Navigate to="/admin/login" />
         } />
         <Route path="/admin/reports" element={
           isAdminAuth() ? <AdminReports /> : <Navigate to="/admin/login" />

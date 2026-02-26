@@ -10,8 +10,11 @@ export default defineConfig(({ mode }) => {
   // Fix: Explicitly import 'process' to ensure cwd() is recognized by the TypeScript compiler in the Node.js environment.
   const env = loadEnv(mode, process.cwd(), '');
 
+  const basePath = (env.VITE_BASE_PATH || '/').trim() || '/';
+  const devApiTarget = (env.VITE_DEV_API_TARGET || 'http://127.0.0.1:8000').trim();
+
   return {
-    base: '/study-group-finder/',
+    base: basePath,
     plugins: [tailwindcss(), react()],
     define: {
       // Polyfill process.env for the browser
@@ -22,7 +25,7 @@ export default defineConfig(({ mode }) => {
       proxy: {
         // Redirect API calls to the Laravel backend
         '/api': {
-          target: 'http://127.0.0.1:8000',
+          target: devApiTarget,
           changeOrigin: true,
           secure: false,
         },
@@ -30,7 +33,7 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       outDir: 'dist',
-      sourcemap: true,
+      sourcemap: mode !== 'production',
     },
   };
 });

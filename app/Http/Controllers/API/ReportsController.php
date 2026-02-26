@@ -141,6 +141,10 @@ class ReportsController extends Controller
      */
     public function updatePriority(Request $request, $id)
     {
+        if (Auth::user()->role !== 'admin') {
+            return response()->json(['message' => 'Admin access required.'], 403);
+        }
+
         $validated = $request->validate([
             'priority' => 'required|in:low,medium,high,urgent'
         ]);

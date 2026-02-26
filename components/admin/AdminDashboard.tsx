@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Users, UsersIcon, MessageSquare, Star, TrendingUp, TrendingDown, Activity, Clock, RefreshCw, AlertTriangle, Calendar } from 'lucide-react';
+import { Users, UsersIcon, MessageSquare, Star, TrendingUp, TrendingDown, Activity, Clock, RefreshCw, AlertTriangle, Calendar, Award, BookOpen } from 'lucide-react';
 import AdminLayout from './AdminLayout';
+import { API_CONFIG } from '../../constants';
 
 interface DashboardStats {
   total_users: number;
@@ -15,11 +16,19 @@ interface DashboardStats {
   admin_count: number;
   moderator_count: number;
   avg_rating: number;
+  highest_rated_group: { id: number; name: string; avg_rating: number; rating_count: number } | null;
+  highest_rated_leader: { id: number; name: string; avg_rating: number; rating_count: number } | null;
   upcoming_events: number;
   new_groups_today: number;
   reports_count: number;
+  reports_by_priority: { low: number; medium: number; high: number; urgent: number };
   violations_count: number;
+  banned_count: number;
+  suspended_count: number;
   meetings_this_week: number;
+  total_karma: number;
+  avg_karma: number;
+  top_karma_user: { name: string; karma_points: number } | null;
   group_with_most_meetings: {
     id: number;
     name: string;
@@ -42,6 +51,8 @@ interface DashboardStats {
   recent_events: any[];
   groups_by_status: any[];
   groups_by_faculty: any[];
+  users_by_major: Array<{ major: string; count: number }>;
+  distinct_majors_count: number;
 }
 
 const AdminDashboard: React.FC = () => {
@@ -73,7 +84,7 @@ const AdminDashboard: React.FC = () => {
       const user = JSON.parse(userStr);
       const token = user.token;
 
-      const response = await fetch('http://localhost:8000/api/admin/dashboard', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/admin/dashboard`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -151,7 +162,7 @@ const AdminDashboard: React.FC = () => {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="bg-white rounded-2xl p-6 border-2 border-slate-200 shadow-sm hover:shadow-lg transition-all">
+          <div className="bg-white rounded-2xl p-6 border-2 border-slate-200 shadow-sm hover:shadow-lg transition-all min-h-[220px] flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
                 <Users size={24} className="text-blue-600" />
@@ -170,7 +181,7 @@ const AdminDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 border-2 border-slate-200 shadow-sm hover:shadow-lg transition-all">
+          <div className="bg-white rounded-2xl p-6 border-2 border-slate-200 shadow-sm hover:shadow-lg transition-all min-h-[220px] flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
                 <UsersIcon size={24} className="text-emerald-600" />
@@ -181,10 +192,13 @@ const AdminDashboard: React.FC = () => {
             <div className="flex items-center gap-2 mt-2">
               <Activity size={14} className="text-emerald-500" />
               <span className="text-sm font-bold text-emerald-600">{stats?.active_groups || 0} Active</span>
+              <span className="text-slate-300">·</span>
+              <TrendingUp size={14} className="text-teal-500" />
+              <span className="text-sm font-bold text-teal-600">+{stats?.new_groups_today || 0} today</span>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 border-2 border-slate-200 shadow-sm hover:shadow-lg transition-all">
+          <div className="bg-white rounded-2xl p-6 border-2 border-slate-200 shadow-sm hover:shadow-lg transition-all min-h-[220px] flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
                 <MessageSquare size={24} className="text-orange-600" />
@@ -198,7 +212,7 @@ const AdminDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 border-2 border-slate-200 shadow-sm hover:shadow-lg transition-all">
+          <div className="bg-white rounded-2xl p-6 border-2 border-slate-200 shadow-sm hover:shadow-lg transition-all min-h-[220px] flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
                 <Star size={24} className="text-amber-600" />
@@ -210,9 +224,27 @@ const AdminDashboard: React.FC = () => {
               <Star size={14} className="text-amber-500 fill-amber-500" />
               <span className="text-sm font-bold text-slate-500">Avg: {stats?.avg_rating ? stats.avg_rating.toFixed(1) : '0.0'}</span>
             </div>
+            {stats?.highest_rated_group && (
+              <div className="mt-3 pt-3 border-t border-slate-100 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest shrink-0">Top Group</span>
+                  <span className="text-xs font-bold text-amber-700 truncate">{stats.highest_rated_group.name}</span>
+                  <span className="text-xs font-black text-amber-500 shrink-0">{stats.highest_rated_group.avg_rating.toFixed(1)}★</span>
+                  <span className="text-[10px] font-bold text-slate-400 shrink-0">({stats.highest_rated_group.rating_count})</span>
+                </div>
+                {stats?.highest_rated_leader && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest shrink-0">Top Leader</span>
+                    <span className="text-xs font-bold text-amber-700 truncate">{stats.highest_rated_leader.name}</span>
+                    <span className="text-xs font-black text-amber-500 shrink-0">{stats.highest_rated_leader.avg_rating.toFixed(1)}★</span>
+                    <span className="text-[10px] font-bold text-slate-400 shrink-0">({stats.highest_rated_leader.rating_count})</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
-          <div className="bg-white rounded-2xl p-6 border-2 border-slate-200 shadow-sm hover:shadow-lg transition-all">
+          <div className="bg-white rounded-2xl p-6 border-2 border-slate-200 shadow-sm hover:shadow-lg transition-all min-h-[220px] flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
                 <Calendar size={24} className="text-purple-600" />
@@ -220,13 +252,15 @@ const AdminDashboard: React.FC = () => {
               <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Meetings</span>
             </div>
             <p className="text-3xl font-black text-slate-900">{stats?.total_events || 0}</p>
-            <div className="flex items-center gap-2 mt-2">
+            <div className="flex flex-wrap items-center gap-2 mt-2 text-xs">
               <Calendar size={14} className="text-purple-500" />
-              <span className="text-sm font-bold text-slate-500">{stats?.upcoming_events || 0} Upcoming</span>
+              <span className="font-bold text-slate-500">{stats?.upcoming_events || 0} Upcoming</span>
+              <span className="text-slate-300">·</span>
+              <span className="font-bold text-indigo-600">{stats?.meetings_this_week || 0} This Week</span>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 border-2 border-slate-200 shadow-sm hover:shadow-lg transition-all">
+          <div className="bg-white rounded-2xl p-6 border-2 border-slate-200 shadow-sm hover:shadow-lg transition-all min-h-[220px] flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
                 <AlertTriangle size={24} className="text-red-600" />
@@ -238,37 +272,35 @@ const AdminDashboard: React.FC = () => {
               <AlertTriangle size={14} className="text-red-500" />
               <span className="text-sm font-bold text-slate-500">Pending reports</span>
             </div>
+            <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap gap-x-3 gap-y-1 text-xs">
+              <span className="font-bold text-slate-400">Low: <span className="text-slate-600">{stats?.reports_by_priority?.low ?? 0}</span></span>
+              <span className="font-bold text-amber-500">Med: <span className="text-amber-700">{stats?.reports_by_priority?.medium ?? 0}</span></span>
+              <span className="font-bold text-orange-500">High: <span className="text-orange-700">{stats?.reports_by_priority?.high ?? 0}</span></span>
+              <span className="font-bold text-red-500">Urgent: <span className="text-red-700">{stats?.reports_by_priority?.urgent ?? 0}</span></span>
+            </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 border-2 border-slate-200 shadow-sm hover:shadow-lg transition-all">
+          <div className="bg-white rounded-2xl p-6 border-2 border-slate-200 shadow-sm hover:shadow-lg transition-all min-h-[220px] flex flex-col">
             <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center">
-                <UsersIcon size={24} className="text-teal-600" />
+              <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
+                <Award size={24} className="text-emerald-600" />
               </div>
-              <span className="text-xs font-black text-slate-400 uppercase tracking-widest">New Today</span>
+              <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Karma</span>
             </div>
-            <p className="text-3xl font-black text-slate-900">{stats?.new_groups_today || 0}</p>
-            <div className="flex items-center gap-1 mt-2">
-              <TrendingUp size={14} className="text-teal-500" />
-              <span className="text-sm font-bold text-slate-500">Groups created today</span>
+            <p className="text-3xl font-black text-slate-900">{stats?.total_karma?.toLocaleString() || 0}</p>
+            <div className="flex items-center gap-2 mt-2">
+              <Award size={14} className="text-emerald-500" />
+              <span className="text-sm font-bold text-slate-500">Avg {stats?.avg_karma || 0} per user</span>
+              {stats?.top_karma_user && (
+                <>
+                  <span className="text-slate-300">·</span>
+                  <span className="text-sm font-bold text-emerald-600 truncate">Top: {stats.top_karma_user.name} ({stats.top_karma_user.karma_points})</span>
+                </>
+              )}
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 border-2 border-slate-200 shadow-sm hover:shadow-lg transition-all">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center">
-                <Calendar size={24} className="text-indigo-600" />
-              </div>
-              <span className="text-xs font-black text-slate-400 uppercase tracking-widest">This Week</span>
-            </div>
-            <p className="text-3xl font-black text-slate-900">{stats?.meetings_this_week || 0}</p>
-            <div className="flex items-center gap-1 mt-2">
-              <Calendar size={14} className="text-indigo-500" />
-              <span className="text-sm font-bold text-slate-500">Meetings scheduled</span>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl p-6 border-2 border-slate-200 shadow-sm hover:shadow-lg transition-all">
+          <div className="bg-white rounded-2xl p-6 border-2 border-slate-200 shadow-sm hover:shadow-lg transition-all min-h-[220px] flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-rose-100 rounded-xl flex items-center justify-center">
                 <AlertTriangle size={24} className="text-rose-600" />
@@ -279,6 +311,32 @@ const AdminDashboard: React.FC = () => {
             <div className="flex items-center gap-1 mt-2">
               <TrendingDown size={14} className="text-rose-500" />
               <span className="text-sm font-bold text-slate-500">Banned/Suspended users</span>
+            </div>
+            <div className="mt-3 pt-3 border-t border-slate-100 flex gap-4 text-xs">
+              <span className="font-bold text-rose-400">Banned: <span className="text-rose-700">{stats?.banned_count ?? 0}</span></span>
+              <span className="font-bold text-orange-400">Suspended: <span className="text-orange-700">{stats?.suspended_count ?? 0}</span></span>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-6 border-2 border-slate-200 shadow-sm hover:shadow-lg transition-all min-h-[220px] flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center">
+                <BookOpen size={24} className="text-teal-600" />
+              </div>
+              <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Majors</span>
+            </div>
+            <p className="text-3xl font-black text-slate-900">{stats?.distinct_majors_count || 0}</p>
+            <div className="flex flex-wrap items-center gap-2 mt-2 text-xs">
+              {stats?.users_by_major && stats.users_by_major.length > 0 ? (
+                <>
+                  <BookOpen size={14} className="text-teal-500" />
+                  <span className="font-bold text-teal-600 truncate">Top: {stats.users_by_major[0].major}</span>
+                  <span className="text-slate-300">·</span>
+                  <span className="font-bold text-slate-500">{stats.users_by_major[0].count} students</span>
+                </>
+              ) : (
+                <span className="font-bold text-slate-400">No major data</span>
+              )}
             </div>
           </div>
         </div>

@@ -8,6 +8,7 @@ interface Leader {
   name: string;
   email: string;
   major: string;
+  role: string;
   karma_points: number;
   weekly_active_hours: number;
 }
@@ -93,13 +94,14 @@ const LeadersPage: React.FC = () => {
                 <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Rank</th>
                 <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">User</th>
                 <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Major</th>
+                <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Role</th>
                 <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Karma Points</th>
               </tr>
             </thead>
             <tbody>
               {leaders.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-8 py-16 text-center">
+                  <td colSpan={5} className="px-8 py-16 text-center">
                     <Trophy size={48} className="mx-auto mb-4 text-slate-200" />
                     <p className="font-bold text-slate-400">No contributors yet.</p>
                     <p className="text-sm text-slate-400 mt-2">Be the first to earn karma points!</p>
@@ -157,6 +159,19 @@ const LeadersPage: React.FC = () => {
                       <td className="px-8 py-6">
                         <span className="text-sm font-semibold text-slate-600">
                           {user.major || 'Student'}
+                        </span>
+                      </td>
+                      <td className="px-8 py-6">
+                        <span className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest ${
+                          user.role === 'admin'
+                            ? 'bg-purple-100 text-purple-700'
+                            : user.role === 'moderator'
+                            ? 'bg-blue-100 text-blue-700'
+                            : user.role === 'leader'
+                            ? 'bg-amber-100 text-amber-700'
+                            : 'bg-slate-100 text-slate-500'
+                        }`}>
+                          {user.role || 'member'}
                         </span>
                       </td>
                       <td className="px-8 py-6 text-right">

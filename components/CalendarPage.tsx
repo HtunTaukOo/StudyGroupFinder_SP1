@@ -33,6 +33,7 @@ const CalendarPage: React.FC = () => {
   const [showCancelReasonModal, setShowCancelReasonModal] = useState(false);
   const [cancellationReason, setCancellationReason] = useState('');
   const [cancellingEvent, setCancellingEvent] = useState<any | null>(null);
+  const [groupFilter, setGroupFilter] = useState<string>('all');
 
   const now = new Date();
   const [currentMonth, setCurrentMonth] = useState(now.getMonth());
@@ -73,18 +74,26 @@ const CalendarPage: React.FC = () => {
   const monthEvents = useMemo(() => {
     return events.filter(e => {
       const d = new Date(e.start_time);
-      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      if (d.getMonth() !== currentMonth || d.getFullYear() !== currentYear) return false;
+      if (groupFilter === 'all') return true;
+      if (groupFilter === 'personal') return !e.group_id;
+      return String(e.group_id) === groupFilter;
     });
-  }, [events, currentMonth, currentYear]);
+  }, [events, currentMonth, currentYear, groupFilter]);
 
   // Upcoming events (from today forward, sorted)
   const upcomingEvents = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return events
-      .filter(e => new Date(e.start_time) >= today)
+      .filter(e => {
+        if (new Date(e.start_time) < today) return false;
+        if (groupFilter === 'all') return true;
+        if (groupFilter === 'personal') return !e.group_id;
+        return String(e.group_id) === groupFilter;
+      })
       .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
-  }, [events]);
+  }, [events, groupFilter]);
 
   useEffect(() => {
     loadData();
@@ -106,7 +115,7 @@ const CalendarPage: React.FC = () => {
     }
   };
 
-  const handleAddEvent = async (e: React.FormEvent) => {
+  const handleAddEvent = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (containsBadWords(newEvent.title) || containsBadWords(newEvent.location)) {
       alert('Your event content contains inappropriate language. Please revise and try again.');
@@ -314,6 +323,23 @@ const CalendarPage: React.FC = () => {
               <button onClick={goToNextMonth} className="p-2 hover:bg-slate-100 rounded-xl transition-all border border-slate-100"><ChevronRight size={20} className="text-slate-400" /></button>
             </div>
           </div>
+
+          {/* Group filter dropdown */}
+          {groups.length > 0 && (
+            <div className="mb-6">
+              <select
+                value={groupFilter}
+                onChange={e => setGroupFilter(e.target.value)}
+                className="w-full sm:w-56 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black text-slate-600 uppercase tracking-widest outline-none focus:border-orange-400 transition-all cursor-pointer"
+              >
+                <option value="all">All Meetings</option>
+                <option value="personal">Personal Only</option>
+                {groups.map(g => (
+                  <option key={g.id} value={String(g.id)}>{g.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className="grid grid-cols-7 gap-px bg-slate-100 border border-slate-100 rounded-3xl overflow-hidden">
             {weekDays.map(day => (

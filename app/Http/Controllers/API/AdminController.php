@@ -12,7 +12,9 @@ use App\Models\Event;
 use App\Models\Rating;
 use App\Models\Report;
 use App\Models\UserWarning;
+use App\Models\KarmaLog;
 use App\Models\ModerationLog;
+use App\Models\LeaderRequest;
 use App\Services\KarmaService;
 use App\Mail\UserWarnedMail;
 use App\Mail\UserBannedMail;
@@ -31,11 +33,38 @@ use Illuminate\Support\Facades\Auth;
 
 class AdminController extends Controller
 {
+    private const DASHBOARD_CACHE_KEY = 'admin_dashboard_stats_v2';
+    private const ANALYTICS_CACHE_KEY_PREFIX = 'admin_analytics_v2_';
+
+    /**
+     * Scope query to non-admin roles used in student-facing major stats.
+     */
+    private function scopeMemberLeaderRoles($query)
+    {
+        return $query->whereIn(DB::raw('LOWER(TRIM(role))'), ['member', 'leader', 'moderator']);
+    }
+
+    /**
+     * Scope query to users with a non-empty major after trimming spaces.
+     */
+    private function scopeNonEmptyMajor($query)
+    {
+        return $query->whereNotNull('major')
+            ->whereRaw("TRIM(major) <> ''");
+    }
+
     /**
      * Clear admin dashboard and analytics caches
      */
     private function clearAdminCaches()
     {
+        // Current cache keys
+        Cache::forget(self::DASHBOARD_CACHE_KEY);
+        Cache::forget(self::ANALYTICS_CACHE_KEY_PREFIX . 'daily');
+        Cache::forget(self::ANALYTICS_CACHE_KEY_PREFIX . 'weekly');
+        Cache::forget(self::ANALYTICS_CACHE_KEY_PREFIX . 'monthly');
+
+        // Legacy cache keys
         Cache::forget('admin_dashboard_stats');
         Cache::forget('admin_analytics_daily');
         Cache::forget('admin_analytics_weekly');
@@ -48,7 +77,7 @@ class AdminController extends Controller
     public function dashboard()
     {
         // Cache dashboard stats for 2 minutes (120 seconds)
-        $stats = Cache::remember('admin_dashboard_stats', 120, function () {
+        $stats = Cache::remember(self::DASHBOARD_CACHE_KEY, 120, function () {
             // Calculate average rating
             $avgGroupRating = Rating::avg('group_rating');
             $avgLeaderRating = Rating::avg('leader_rating');
@@ -59,8 +88,14 @@ class AdminController extends Controller
             // New metrics
             $newGroupsToday = StudyGroup::whereDate('created_at', today())->count();
             $reportsCount = Report::where('status', 'pending')->count();
-            $violationsCount = User::where('banned', true)->count()
-                + User::whereNotNull('suspended_until')->where('suspended_until', '>', now())->count();
+            $bannedCount = User::where('banned', true)->count();
+            $suspendedCount = User::whereNotNull('suspended_until')->where('suspended_until', '>', now())->count();
+            $violationsCount = $bannedCount + $suspendedCount;
+
+            $reportsByPriority = Report::where('status', 'pending')
+                ->select('priority', DB::raw('count(*) as count'))
+                ->groupBy('priority')
+                ->pluck('count', 'priority');
 
             // Meetings this week (events)
             $meetingsThisWeek = Event::whereBetween('start_time', [
@@ -136,6 +171,28 @@ class AdminController extends Controller
                 ->take(20)
                 ->values();
 
+            // Karma stats
+            $totalKarma = User::sum('karma_points');
+            $avgKarma = User::avg('karma_points');
+            $topKarmaUser = User::orderBy('karma_points', 'desc')->first();
+
+            // Highest rated group (by avg group_rating)
+            $highestRatedGroup = DB::table('ratings')
+                ->join('study_groups', 'ratings.group_id', '=', 'study_groups.id')
+                ->select('study_groups.id', 'study_groups.name', DB::raw('ROUND(AVG(ratings.group_rating)::numeric, 1) as avg_group_rating'), DB::raw('COUNT(*) as rating_count'))
+                ->groupBy('study_groups.id', 'study_groups.name')
+                ->orderByDesc('avg_group_rating')
+                ->first();
+
+            // Highest rated leader (by avg leader_rating across all groups they lead)
+            $highestRatedLeader = DB::table('ratings')
+                ->join('study_groups', 'ratings.group_id', '=', 'study_groups.id')
+                ->join('users', 'study_groups.creator_id', '=', 'users.id')
+                ->select('users.id', 'users.name', DB::raw('ROUND(AVG(ratings.leader_rating)::numeric, 1) as avg_leader_rating'), DB::raw('COUNT(*) as rating_count'))
+                ->groupBy('users.id', 'users.name')
+                ->orderByDesc('avg_leader_rating')
+                ->first();
+
             return [
                 'total_users' => User::count(),
                 'total_groups' => StudyGroup::count(),
@@ -154,8 +211,21 @@ class AdminController extends Controller
                 // New metrics
                 'new_groups_today' => $newGroupsToday,
                 'reports_count' => $reportsCount,
+                'reports_by_priority' => [
+                    'low'    => (int) ($reportsByPriority['low']    ?? 0),
+                    'medium' => (int) ($reportsByPriority['medium'] ?? 0),
+                    'high'   => (int) ($reportsByPriority['high']   ?? 0),
+                    'urgent' => (int) ($reportsByPriority['urgent'] ?? 0),
+                ],
                 'violations_count' => $violationsCount,
+                'banned_count' => $bannedCount,
+                'suspended_count' => $suspendedCount,
                 'meetings_this_week' => $meetingsThisWeek,
+                'total_karma' => (int) $totalKarma,
+                'avg_karma' => round($avgKarma ?? 0, 1),
+                'top_karma_user' => $topKarmaUser ? ['name' => $topKarmaUser->name, 'karma_points' => $topKarmaUser->karma_points] : null,
+                'highest_rated_group' => $highestRatedGroup ? ['id' => $highestRatedGroup->id, 'name' => $highestRatedGroup->name, 'avg_rating' => (float) $highestRatedGroup->avg_group_rating, 'rating_count' => $highestRatedGroup->rating_count] : null,
+                'highest_rated_leader' => $highestRatedLeader ? ['id' => $highestRatedLeader->id, 'name' => $highestRatedLeader->name, 'avg_rating' => (float) $highestRatedLeader->avg_leader_rating, 'rating_count' => $highestRatedLeader->rating_count] : null,
                 'group_with_most_meetings' => $groupWithMostMeetings,
                 'most_reported_users' => $mostReportedUsers,
                 'recent_activity_feed' => $recentActivityFeed,
@@ -197,6 +267,20 @@ class AdminController extends Controller
                 'users_by_role' => User::select('role', DB::raw('count(*) as count'))
                     ->groupBy('role')
                     ->get(),
+                'users_by_major' => $this->scopeNonEmptyMajor(
+                    $this->scopeMemberLeaderRoles(
+                        User::selectRaw('UPPER(TRIM(major)) as major, count(*) as count')
+                    )
+                )
+                    ->groupBy(DB::raw('UPPER(TRIM(major))'))
+                    ->orderBy('count', 'desc')
+                    ->take(10)
+                    ->get(),
+                'distinct_majors_count' => (int) $this->scopeNonEmptyMajor(
+                    $this->scopeMemberLeaderRoles(User::query())
+                )
+                    ->selectRaw('COUNT(DISTINCT UPPER(TRIM(major))) as count')
+                    ->value('count'),
             ];
         });
 
@@ -232,7 +316,11 @@ class AdminController extends Controller
             }
             return $query;
         })
-        ->withCount(['createdGroups', 'joinedGroups'])
+        ->withCount([
+            'createdGroups',
+            'joinedGroups as joined_groups_count' => fn($q) =>
+                $q->whereColumn('study_groups.creator_id', '!=', 'group_user.user_id'),
+        ])
         ->orderBy('created_at', 'desc')
         ->paginate($perPage);
 
@@ -256,6 +344,10 @@ class AdminController extends Controller
      */
     public function updateUser(Request $request, $id)
     {
+        if (Auth::user()->role !== 'admin') {
+            return response()->json(['message' => 'Admin access required.'], 403);
+        }
+
         $user = User::findOrFail($id);
 
         $validated = $request->validate([
@@ -268,6 +360,7 @@ class AdminController extends Controller
         ]);
 
         $user->update($validated);
+        $this->clearAdminCaches();
 
         return response()->json([
             'message' => 'User updated successfully',
@@ -337,6 +430,10 @@ class AdminController extends Controller
      */
     public function updateGroup(Request $request, $id)
     {
+        if (Auth::user()->role !== 'admin') {
+            return response()->json(['message' => 'Admin access required.'], 403);
+        }
+
         $group = StudyGroup::findOrFail($id);
 
         $validated = $request->validate([
@@ -385,6 +482,10 @@ class AdminController extends Controller
      */
     public function approveGroup($id)
     {
+        if (Auth::user()->role !== 'admin') {
+            return response()->json(['message' => 'Admin access required.'], 403);
+        }
+
         $group = StudyGroup::findOrFail($id);
 
         if ($group->approval_status !== 'pending') {
@@ -441,6 +542,10 @@ class AdminController extends Controller
      */
     public function rejectGroup(Request $request, $id)
     {
+        if (Auth::user()->role !== 'admin') {
+            return response()->json(['message' => 'Admin access required.'], 403);
+        }
+
         $validated = $request->validate([
             'reason' => 'required|string'
         ]);
@@ -523,7 +628,7 @@ class AdminController extends Controller
         $range = $request->get('range', 'monthly');
 
         // Cache analytics for 10 minutes (600 seconds) with range-specific key
-        $cacheKey = "admin_analytics_{$range}";
+        $cacheKey = self::ANALYTICS_CACHE_KEY_PREFIX . $range;
 
         $analytics = Cache::remember($cacheKey, 600, function () use ($range) {
             // Determine date range
@@ -610,21 +715,22 @@ class AdminController extends Controller
 
             // --- NEW ANALYTICS METRICS ---
 
-            // User retention rate (percentage of all users active in last 30 days)
-            $totalUsers = User::count();
-            $activeUsersLast30Days = User::where(function($query) {
-                $query->whereHas('messages', function($q) {
-                    $q->where('created_at', '>=', now()->subDays(30));
+            // User retention rate: % of users registered BEFORE the period who were active during the period
+            $periodStart = now()->subDays($daysBack);
+            $totalUsersBeforePeriod = User::where('created_at', '<', $periodStart)->count();
+            $activeUsersInPeriod = User::where('created_at', '<', $periodStart)
+                ->where(function($query) use ($periodStart) {
+                    $query->whereHas('messages', function($q) use ($periodStart) {
+                        $q->where('created_at', '>=', $periodStart);
+                    })
+                    ->orWhereHas('joinedGroups', function($q) use ($periodStart) {
+                        $q->where('group_user.created_at', '>=', $periodStart);
+                    });
                 })
-                ->orWhereHas('joinedGroups', function($q) {
-                    $q->where('group_user.created_at', '>=', now()->subDays(30));
-                })
-                ->orWhere('created_at', '>=', now()->subDays(30));
-            })
-            ->count();
+                ->count();
 
-            $retentionRate = $totalUsers > 0
-                ? round(($activeUsersLast30Days / $totalUsers) * 100, 1)
+            $retentionRate = $totalUsersBeforePeriod > 0
+                ? round(($activeUsersInPeriod / $totalUsersBeforePeriod) * 100, 1)
                 : 0;
 
             // Database-agnostic SQL for extracting hour and day
@@ -734,6 +840,51 @@ class AdminController extends Controller
                     ];
                 });
 
+            // Karma earned vs deducted over time
+            $karmaOverTime = KarmaLog::select(
+                DB::raw('DATE(created_at) as date'),
+                DB::raw('SUM(CASE WHEN points > 0 THEN points ELSE 0 END) as earned'),
+                DB::raw('SUM(CASE WHEN points < 0 THEN ABS(points) ELSE 0 END) as deducted')
+            )
+            ->where('created_at', '>=', $startDate)
+            ->groupBy(DB::raw('DATE(created_at)'))
+            ->orderBy(DB::raw('DATE(created_at)'))
+            ->get()
+            ->map(fn($row) => [
+                'date' => $row->date,
+                'earned' => (int) $row->earned,
+                'deducted' => (int) $row->deducted,
+            ]);
+
+            // Karma breakdown by reason (positive actions only, within time range)
+            $karmaByReason = KarmaLog::select(
+                'reason',
+                DB::raw('COUNT(*) as occurrences'),
+                DB::raw('SUM(points) as total_points')
+            )
+            ->where('created_at', '>=', $startDate)
+            ->where('points', '>', 0)
+            ->groupBy('reason')
+            ->orderBy('total_points', 'desc')
+            ->take(10)
+            ->get()
+            ->map(fn($row) => [
+                'reason' => $row->reason,
+                'occurrences' => (int) $row->occurrences,
+                'total_points' => (int) $row->total_points,
+            ]);
+
+            // Top karma users (all-time)
+            $topKarmaUsers = User::select('id', 'name', 'karma_points')
+                ->orderBy('karma_points', 'desc')
+                ->take(10)
+                ->get()
+                ->map(fn($u) => [
+                    'id' => $u->id,
+                    'name' => $u->name,
+                    'karma_points' => (int) $u->karma_points,
+                ]);
+
             return [
                 'user_growth' => $userGrowth,
                 'group_growth' => $groupGrowth,
@@ -753,6 +904,22 @@ class AdminController extends Controller
                 'most_active_time_for_events' => $mostActiveTimeForEvents,
                 'average_group_size' => $avgGroupSize,
                 'time_range' => $range,
+
+                // Karma analytics
+                'karma_over_time' => $karmaOverTime,
+                'karma_by_reason' => $karmaByReason,
+                'top_karma_users' => $topKarmaUsers,
+
+                // Users by major
+                'users_by_major' => $this->scopeNonEmptyMajor(
+                    $this->scopeMemberLeaderRoles(
+                        User::selectRaw('UPPER(TRIM(major)) as major, count(*) as count')
+                    )
+                )
+                    ->groupBy(DB::raw('UPPER(TRIM(major))'))
+                    ->orderBy('count', 'desc')
+                    ->take(10)
+                    ->get(),
             ];
         });
 
@@ -804,13 +971,12 @@ class AdminController extends Controller
      */
     public function warnUser(Request $request, $userId)
     {
+        if (Auth::user()->role !== 'admin') {
+            return response()->json(['message' => 'Admin access required.'], 403);
+        }
+
         try {
             $user = User::findOrFail($userId);
-
-            // Moderators cannot warn admins/moderators
-            if (Auth::user()->role === 'moderator' && in_array($user->role, ['admin', 'moderator'])) {
-                return response()->json(['message' => 'Moderators cannot warn admins or moderators'], 403);
-            }
 
             // Prevent warning admin
             $adminEmails = ['admin@au.edu', 'studyhub.studygroupfinder@gmail.com'];
@@ -946,17 +1112,16 @@ class AdminController extends Controller
      */
     public function banUser(Request $request, $userId)
     {
+        if (Auth::user()->role !== 'admin') {
+            return response()->json(['message' => 'Admin access required.'], 403);
+        }
+
         try {
             $validated = $request->validate([
                 'reason' => 'nullable|string|max:1000'
             ]);
 
             $user = User::findOrFail($userId);
-
-            // Moderators cannot ban admins/moderators
-            if (Auth::user()->role === 'moderator' && in_array($user->role, ['admin', 'moderator'])) {
-                return response()->json(['message' => 'Moderators cannot ban admins or moderators'], 403);
-            }
 
             // Prevent banning admin
             $adminEmails = ['admin@au.edu', 'studyhub.studygroupfinder@gmail.com'];
@@ -1039,6 +1204,10 @@ class AdminController extends Controller
      */
     public function unbanUser($userId)
     {
+        if (Auth::user()->role !== 'admin') {
+            return response()->json(['message' => 'Admin access required.'], 403);
+        }
+
         $user = User::findOrFail($userId);
 
         $user->banned = false;
@@ -1090,6 +1259,10 @@ class AdminController extends Controller
      */
     public function unsuspendUser($userId)
     {
+        if (Auth::user()->role !== 'admin') {
+            return response()->json(['message' => 'Admin access required.'], 403);
+        }
+
         $user = User::findOrFail($userId);
 
         $user->suspended_until = null;
@@ -1337,23 +1510,35 @@ class AdminController extends Controller
         ])
         ->findOrFail($id);
 
+        // Extract relations before they get serialised inside user
+        $createdGroups      = $user->createdGroups;
+        $joinedGroups       = $user->joinedGroups;
+        $submittedReports   = $user->submittedReports;
+        $receivedReports    = $user->receivedReports;
+        $moderationHistory  = $user->moderationHistory;
+
         return response()->json([
-            'user' => $user,
+            'user'               => $user,
+            'created_groups'     => $createdGroups,
+            'joined_groups'      => $joinedGroups,
+            'reports_made'       => $submittedReports,
+            'reports_received'   => $receivedReports,
+            'moderation_history' => $moderationHistory,
             'statistics' => [
-                'groups_created' => $user->created_groups_count,
-                'groups_joined' => $user->joined_groups_count,
-                'messages_sent' => $user->messages_count,
+                'groups_created'    => $user->created_groups_count,
+                'groups_joined'     => $user->joined_groups_count,
+                'messages_sent'     => $user->messages_count,
                 'reports_submitted' => $user->submitted_reports_count,
-                'reports_received' => $user->received_reports_count,
-                'warnings' => $user->warnings ?? 0,
-                'active_warnings' => $user->activeWarnings()->count(),
-                'total_warnings' => $user->userWarnings()->count(),
-                'is_banned' => $user->banned,
-                'is_suspended' => $user->isSuspended(),
-                'suspended_until' => $user->suspended_until,
+                'reports_received'  => $user->received_reports_count,
+                'warnings'          => $user->warnings ?? 0,
+                'active_warnings'   => $user->activeWarnings()->count(),
+                'total_warnings'    => $user->userWarnings()->count(),
+                'is_banned'         => $user->banned,
+                'is_suspended'      => $user->isSuspended(),
+                'suspended_until'   => $user->suspended_until,
                 'suspension_reason' => $user->suspension_reason,
-                'banned_reason' => $user->banned_reason
-            ]
+                'banned_reason'     => $user->banned_reason,
+            ],
         ]);
     }
 
@@ -1368,14 +1553,13 @@ class AdminController extends Controller
         }
 
         $validated = $request->validate([
-            'role' => 'required|in:member,leader,moderator,admin'
+            'role' => 'required|in:member,leader,moderator'
         ]);
 
         $user = User::findOrFail($id);
 
-        // Prevent changing admin role
-        $adminEmails = ['admin@au.edu', 'studyhub.studygroupfinder@gmail.com'];
-        if (in_array($user->email, $adminEmails) && $validated['role'] !== 'admin') {
+        // Prevent changing the sole admin account role
+        if ($user->email === 'studyhub.studygroupfinder@gmail.com') {
             return response()->json(['message' => 'Cannot change admin account role'], 403);
         }
 
@@ -1434,6 +1618,10 @@ class AdminController extends Controller
      */
     public function suspendUser(Request $request, $id)
     {
+        if (Auth::user()->role !== 'admin') {
+            return response()->json(['message' => 'Admin access required.'], 403);
+        }
+
         try {
             $validated = $request->validate([
                 'duration_days' => 'required|integer|min:1|max:365',
@@ -1441,11 +1629,6 @@ class AdminController extends Controller
             ]);
 
             $user = User::findOrFail($id);
-
-            // Moderators cannot suspend admins/moderators
-            if (Auth::user()->role === 'moderator' && in_array($user->role, ['admin', 'moderator'])) {
-                return response()->json(['message' => 'Moderators cannot suspend admins or moderators'], 403);
-            }
 
             // Prevent suspending admin
             $adminEmails = ['admin@au.edu', 'studyhub.studygroupfinder@gmail.com'];
@@ -1533,12 +1716,11 @@ class AdminController extends Controller
      */
     public function resetPassword($id)
     {
-        $user = User::findOrFail($id);
-
-        // Moderators cannot reset passwords for admins/moderators
-        if (Auth::user()->role === 'moderator' && in_array($user->role, ['admin', 'moderator'])) {
-            return response()->json(['message' => 'Moderators cannot reset passwords for admins or moderators'], 403);
+        if (Auth::user()->role !== 'admin') {
+            return response()->json(['message' => 'Admin access required.'], 403);
         }
+
+        $user = User::findOrFail($id);
 
         // Generate temporary password
         $tempPassword = 'Temp' . rand(10000, 99999) . '!';
@@ -1596,5 +1778,101 @@ class AdminController extends Controller
             ->paginate($perPage);
 
         return response()->json($logs);
+    }
+
+    // ─── Leader Requests ───────────────────────────────────────────────────────
+
+    public function getLeaderRequests(Request $request)
+    {
+        $status = $request->get('status', 'pending');
+
+        $query = LeaderRequest::with(['user:id,name,email,role,karma_points,created_at', 'reviewer:id,name'])
+            ->when($status !== 'all', fn($q) => $q->where('status', $status))
+            ->orderBy('created_at', 'desc');
+
+        return response()->json($query->paginate(20));
+    }
+
+    public function approveLeaderRequest($id)
+    {
+        if (Auth::user()->role !== 'admin') {
+            return response()->json(['message' => 'Admin access required.'], 403);
+        }
+
+        $leaderRequest = LeaderRequest::with('user')->findOrFail($id);
+
+        if ($leaderRequest->status !== 'pending') {
+            return response()->json(['message' => 'This request has already been reviewed.'], 422);
+        }
+
+        $user = $leaderRequest->user;
+        $user->role = 'leader';
+        $user->save();
+
+        $leaderRequest->update([
+            'status' => 'approved',
+            'reviewed_by' => Auth::id(),
+            'reviewed_at' => now(),
+        ]);
+
+        Notification::create([
+            'user_id' => $user->id,
+            'type' => 'leader_request_approved',
+            'data' => [
+                'message' => 'Your request to become a group leader has been approved! You can now create study groups.',
+            ]
+        ]);
+
+        ModerationLog::create([
+            'moderator_id' => Auth::id(),
+            'target_user_id' => $user->id,
+            'action_type' => 'role_change',
+            'reason' => "Leader request approved — {$user->name} promoted to leader",
+        ]);
+
+        $this->clearAdminCaches();
+
+        return response()->json(['message' => 'Leader request approved.']);
+    }
+
+    public function rejectLeaderRequest(Request $request, $id)
+    {
+        if (Auth::user()->role !== 'admin') {
+            return response()->json(['message' => 'Admin access required.'], 403);
+        }
+
+        $request->validate(['note' => 'nullable|string|max:500']);
+
+        $leaderRequest = LeaderRequest::with('user')->findOrFail($id);
+
+        if ($leaderRequest->status !== 'pending') {
+            return response()->json(['message' => 'This request has already been reviewed.'], 422);
+        }
+
+        $leaderRequest->update([
+            'status' => 'rejected',
+            'admin_note' => $request->note,
+            'reviewed_by' => Auth::id(),
+            'reviewed_at' => now(),
+        ]);
+
+        $user = $leaderRequest->user;
+
+        Notification::create([
+            'user_id' => $user->id,
+            'type' => 'leader_request_rejected',
+            'data' => [
+                'message' => 'Your request to become a group leader was not approved.' . ($request->note ? " Reason: {$request->note}" : ''),
+            ]
+        ]);
+
+        ModerationLog::create([
+            'moderator_id' => Auth::id(),
+            'target_user_id' => $user->id,
+            'action_type' => 'role_change',
+            'reason' => "Leader request rejected for {$user->name}" . ($request->note ? ": {$request->note}" : ''),
+        ]);
+
+        return response()->json(['message' => 'Leader request rejected.']);
     }
 }

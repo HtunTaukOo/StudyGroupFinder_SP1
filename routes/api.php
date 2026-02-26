@@ -12,10 +12,13 @@ use App\Http\Controllers\API\NotificationController;
 use App\Http\Controllers\API\AdminController;
 use App\Http\Controllers\API\RatingController;
 use App\Http\Controllers\API\ReportsController;
+use App\Http\Controllers\API\LeaderRequestController;
 
 // Auth
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
 // Email Verification (public route for clicking email link)
 Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])->name('verification.verify');
@@ -72,6 +75,10 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\SuspendedUserMiddleware:
     Route::post('/reports', [ReportsController::class, 'store']);
     Route::get('/reports/my-reports', [ReportsController::class, 'myReports']);
 
+    // Leader Requests (user-facing)
+    Route::post('/leader-requests', [LeaderRequestController::class, 'store']);
+    Route::get('/leader-requests/my-status', [LeaderRequestController::class, 'myStatus']);
+
     // Calendar
     Route::get('/calendar/events', [CalendarController::class, 'index']);
     Route::post('/calendar/events', [CalendarController::class, 'store']);
@@ -83,10 +90,16 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\SuspendedUserMiddleware:
     Route::put('/profile', [ProfileController::class, 'update']);
     Route::post('/profile/change-password', [ProfileController::class, 'changePassword']);
     Route::get('/profile/stats', [ProfileController::class, 'stats']);
+    Route::get('/profile/details', [ProfileController::class, 'details']);
+
+    // Privacy
+    Route::put('/profile/privacy', [ProfileController::class, 'updatePrivacy']);
+    Route::delete('/profile', [ProfileController::class, 'deleteAccount']);
 
     // User Profiles (view other users)
     Route::get('/users/{id}', [ProfileController::class, 'showUser']);
     Route::get('/users/{id}/stats', [ProfileController::class, 'userStats']);
+    Route::get('/users/{id}/details', [ProfileController::class, 'userDetails']);
 
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index']);
@@ -145,5 +158,10 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\SuspendedUserMiddleware:
         // Ratings Management
         Route::get('/ratings', [AdminController::class, 'getRatings']);
         Route::delete('/ratings/{id}', [AdminController::class, 'deleteRating']);
+
+        // Leader Requests Management
+        Route::get('/leader-requests', [AdminController::class, 'getLeaderRequests']);
+        Route::post('/leader-requests/{id}/approve', [AdminController::class, 'approveLeaderRequest']);
+        Route::post('/leader-requests/{id}/reject', [AdminController::class, 'rejectLeaderRequest']);
     });
 });

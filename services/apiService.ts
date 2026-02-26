@@ -52,6 +52,24 @@ export const apiService = {
     return handleResponse(res);
   },
 
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    const res = await fetch(`${BASE_URL}/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    return handleResponse(res);
+  },
+
+  async resetPassword(data: { token: string; email: string; password: string; password_confirmation: string }): Promise<{ message: string }> {
+    const res = await fetch(`${BASE_URL}/reset-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    return handleResponse(res);
+  },
+
   async resendVerification(): Promise<{message: string}> {
     const res = await fetch(`${BASE_URL}/email/resend`, {
       method: 'POST',
@@ -352,9 +370,37 @@ export const apiService = {
     return handleResponse(res);
   },
 
+  async getProfileDetails(): Promise<any> {
+    const res = await fetch(`${BASE_URL}/profile/details`, { headers: getHeaders() });
+    return handleResponse(res);
+  },
+
+  async getUserDetails(userId: number): Promise<any> {
+    const res = await fetch(`${BASE_URL}/users/${userId}/details`, { headers: getHeaders() });
+    return handleResponse(res);
+  },
+
+  async updatePrivacy(data: { privacy_stats: boolean; privacy_activity: boolean }): Promise<any> {
+    const res = await fetch(`${BASE_URL}/profile/privacy`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(data)
+    });
+    return handleResponse(res);
+  },
+
   async updateProfile(data: any): Promise<User> {
     const res = await fetch(`${BASE_URL}/profile`, {
       method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(data)
+    });
+    return handleResponse(res);
+  },
+
+  async deleteAccount(data: { password: string }): Promise<{ message: string }> {
+    const res = await fetch(`${BASE_URL}/profile`, {
+      method: 'DELETE',
       headers: getHeaders(),
       body: JSON.stringify(data)
     });

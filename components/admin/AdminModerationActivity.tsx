@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Shield, AlertTriangle, Ban, UserCheck, UserX, Clock, Loader2, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import AdminLayout from './AdminLayout';
+import { API_CONFIG } from '../../constants';
 
 interface ModerationLog {
   id: number;
@@ -64,7 +65,7 @@ const AdminModerationActivity: React.FC = () => {
       const token = user.token;
 
       const response = await fetch(
-        `http://localhost:8000/api/admin/moderation-activity?page=${currentPage}`,
+        `${API_CONFIG.BASE_URL}/admin/moderation-activity?page=${currentPage}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -185,7 +186,7 @@ const AdminModerationActivity: React.FC = () => {
         <div className="flex flex-col gap-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-black text-slate-900">Moderation Activity</h1>
+              <h1 className="text-2xl font-black text-slate-900">Activity Log</h1>
               <p className="text-slate-500 font-medium">
                 {totalLogs} total moderation actions logged
               </p>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, Trash2, Loader2, Shield, RefreshCw, Clock, User as UserIcon, AlertOctagon, Ban, Search, CheckCircle, XCircle, Eye, FileText, UserCheck } from 'lucide-react';
 import AdminLayout from './AdminLayout';
+import { API_CONFIG } from '../../constants';
 
 interface ModerationLog {
   id: number;
@@ -110,7 +111,7 @@ const AdminReports: React.FC = () => {
       });
 
       const response = await fetch(
-        `http://localhost:8000/api/admin/reports?${params}`,
+        `${API_CONFIG.BASE_URL}/admin/reports?${params}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -158,7 +159,7 @@ const AdminReports: React.FC = () => {
       const token = user.token;
 
       const response = await fetch(
-        `http://localhost:8000/api/admin/reports/${id}`,
+        `${API_CONFIG.BASE_URL}/admin/reports/${id}`,
         {
           method: 'DELETE',
           headers: {
@@ -192,7 +193,7 @@ const AdminReports: React.FC = () => {
       const token = user.token;
 
       const response = await fetch(
-        `http://localhost:8000/api/admin/reports/${resolvingReport.id}/resolve`,
+        `${API_CONFIG.BASE_URL}/admin/reports/${resolvingReport.id}/resolve`,
         {
           method: 'POST',
           headers: {
@@ -528,7 +529,7 @@ const AdminReports: React.FC = () => {
                                   const token = user.token;
                                   try {
                                     const response = await fetch(
-                                      `http://localhost:8000/api/admin/users/${report.reported_user_id}/unban`,
+                                      `${API_CONFIG.BASE_URL}/admin/users/${report.reported_user_id}/unban`,
                                       {
                                         method: 'POST',
                                         headers: {
@@ -561,7 +562,7 @@ const AdminReports: React.FC = () => {
                                   const token = user.token;
                                   try {
                                     const response = await fetch(
-                                      `http://localhost:8000/api/admin/users/${report.reported_user_id}/unsuspend`,
+                                      `${API_CONFIG.BASE_URL}/admin/users/${report.reported_user_id}/unsuspend`,
                                       {
                                         method: 'POST',
                                         headers: {
@@ -607,7 +608,7 @@ const AdminReports: React.FC = () => {
                               const token = user.token;
                               try {
                                 const response = await fetch(
-                                  `http://localhost:8000/api/admin/reports/${report.id}/resolve`,
+                                  `${API_CONFIG.BASE_URL}/admin/reports/${report.id}/resolve`,
                                   {
                                     method: 'POST',
                                     headers: {

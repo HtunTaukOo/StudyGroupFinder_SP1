@@ -9,6 +9,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class DiscoverController extends Controller {
+    private function scopeLeaderboardRoles($query) {
+        return $query->whereIn(DB::raw('LOWER(TRIM(role))'), ['member', 'leader', 'moderator']);
+    }
+
     public function trending() {
         return StudyGroup::withCount('members')
             ->orderBy('members_count', 'desc')
@@ -25,8 +29,9 @@ class DiscoverController extends Controller {
 
     public function leaders() {
         // Get all users (not just leaders) and calculate their weekly active hours
-        $users = User::orderBy('karma_points', 'desc')
-            ->select('id', 'name', 'email', 'major', 'karma_points')
+        $users = $this->scopeLeaderboardRoles(User::query())
+            ->orderBy('karma_points', 'desc')
+            ->select('id', 'name', 'email', 'major', 'karma_points', 'role')
             ->take(50) // Get top 50 to calculate activity
             ->get();
 
@@ -79,8 +84,11 @@ class DiscoverController extends Controller {
 
         $lower = strtolower($query);
 
-        return User::whereRaw('LOWER(name) LIKE ?', ["%{$lower}%"])
-            ->orWhereRaw('LOWER(major) LIKE ?', ["%{$lower}%"])
+        return $this->scopeLeaderboardRoles(User::query())
+            ->where(function ($q) use ($lower) {
+                $q->whereRaw('LOWER(name) LIKE ?', ["%{$lower}%"])
+                    ->orWhereRaw('LOWER(major) LIKE ?', ["%{$lower}%"]);
+            })
             ->orderBy('karma_points', 'desc')
             ->select('id', 'name', 'email', 'major', 'karma_points', 'role')
             ->take(20)

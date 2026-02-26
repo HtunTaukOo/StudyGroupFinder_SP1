@@ -53,6 +53,14 @@ class StudyGroupController extends Controller
             ], 403);
         }
 
+        // Only leaders and admins can create groups
+        if (!in_array($user->role, ['leader', 'admin'])) {
+            return response()->json([
+                'message' => 'Only group leaders can create study groups. Request leader role from the admin first.',
+                'requires_leader_role' => true
+            ], 403);
+        }
+
         $validated = $request->validate([
             'name' => 'required|string',
             'subject' => 'required|string',
@@ -70,12 +78,6 @@ class StudyGroupController extends Controller
             'status' => 'open',
             'approval_status' => $approvalStatus
         ]));
-
-        // Upgrade member to leader role, but preserve admin and moderator roles
-        if ($user->role === 'member') {
-            $user->role = User::ROLE_LEADER;
-            $user->save();
-        }
 
         // Attach the creator as the first member with approved status
         $group->allMemberRelations()->attach($user->id, [
@@ -214,6 +216,14 @@ class StudyGroupController extends Controller
 
             // Award karma for joining a group
             KarmaService::awardGroupJoin($user);
+
+            // Post system message to group chat
+            Message::create([
+                'group_id' => $group->id,
+                'user_id' => $user->id,
+                'content' => 'joined the group',
+                'type' => 'system',
+            ]);
 
             return response()->json(['message' => 'Successfully joined the group!']);
 
@@ -417,6 +427,14 @@ class StudyGroupController extends Controller
             if ($groupLeader) {
                 KarmaService::awardLeaderForMemberJoin($groupLeader);
             }
+
+            // Post system message to group chat
+            Message::create([
+                'group_id' => $group->id,
+                'user_id' => $requestingUser->id,
+                'content' => 'joined the group',
+                'type' => 'system',
+            ]);
         }
 
         return response()->json(['message' => 'Join request approved successfully.']);

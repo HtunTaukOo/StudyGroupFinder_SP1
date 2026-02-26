@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Plus, Users, MapPin, Sparkles, Loader2, X, AlertCircle, Search, Eraser, Filter, ChevronDown, Lock, Archive, Unlock, TrendingUp, Flame, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
+import { Plus, Users, MapPin, Sparkles, Loader2, X, AlertCircle, Search, Eraser, Filter, ChevronDown, Lock, Archive, Unlock, TrendingUp, Flame, ChevronLeft, ChevronRight, Pencil, Crown, Clock } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { StudyGroup, User, GroupStatus } from '../types';
 import { geminiService } from '../services/geminiService';
@@ -8,6 +8,7 @@ import { apiService } from '../services/apiService';
 import GroupDetailModal from './GroupDetailModal';
 import StarRating from './StarRating';
 import { containsBadWords } from '../utils/badWords';
+import { API_CONFIG } from '../constants';
 
 const HomePage: React.FC = () => {
   // All groups state
@@ -47,7 +48,8 @@ const HomePage: React.FC = () => {
     description: '',
     max_members: 5,
     location: '',
-    faculty: ''
+    faculty: '',
+    status: 'open'
   });
 
   // Edit group state
@@ -56,11 +58,18 @@ const HomePage: React.FC = () => {
     name: '',
     subject: '',
     description: '',
+    status: 'open',
     max_members: 5,
     location: '',
     faculty: ''
   });
   const [editSaving, setEditSaving] = useState(false);
+
+  // Leader request state
+  const [showLeaderRequestModal, setShowLeaderRequestModal] = useState(false);
+  const [leaderRequestReason, setLeaderRequestReason] = useState('');
+  const [leaderRequestStatus, setLeaderRequestStatus] = useState<{status: string; reason?: string; admin_note?: string} | null>(null);
+  const [submittingLeaderRequest, setSubmittingLeaderRequest] = useState(false);
 
   // Group detail modal state
   const [selectedGroupForDetail, setSelectedGroupForDetail] = useState<StudyGroup | null>(null);
@@ -71,6 +80,11 @@ const HomePage: React.FC = () => {
 
   useEffect(() => {
     loadAllData();
+    if (currentUser?.role === 'member') {
+      fetchLeaderRequestStatus();
+    }
+    // Sync role from server in case it was updated (e.g. leader request approved)
+    syncUserRole();
   }, []);
 
   useEffect(() => {
@@ -106,6 +120,64 @@ const HomePage: React.FC = () => {
       setError("Could not connect to the campus server. Make sure your backend is running.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const syncUserRole = async () => {
+    try {
+      const profile = await apiService.getProfile();
+      const userStr = localStorage.getItem('auth_user');
+      if (userStr && profile?.role) {
+        const user = JSON.parse(userStr);
+        if (user.role !== profile.role) {
+          user.role = profile.role;
+          localStorage.setItem('auth_user', JSON.stringify(user));
+          window.location.reload();
+        }
+      }
+    } catch {}
+  };
+
+  const fetchLeaderRequestStatus = async () => {
+    try {
+      const userStr = localStorage.getItem('auth_user');
+      const token = userStr ? JSON.parse(userStr).token : null;
+      if (!token) return;
+      const res = await fetch(`${API_CONFIG.BASE_URL}/leader-requests/my-status`, {
+        headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setLeaderRequestStatus(data);
+      }
+    } catch {}
+  };
+
+  const handleLeaderRequestSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmittingLeaderRequest(true);
+    try {
+      const userStr = localStorage.getItem('auth_user');
+      const token = userStr ? JSON.parse(userStr).token : null;
+      const res = await fetch(`${API_CONFIG.BASE_URL}/leader-requests`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ reason: leaderRequestReason })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to submit request');
+      setLeaderRequestStatus(data.request);
+      setShowLeaderRequestModal(false);
+      setLeaderRequestReason('');
+      alert('Leader request submitted! You will be notified once the admin reviews it.');
+    } catch (err: any) {
+      alert(err.message || 'Failed to submit request');
+    } finally {
+      setSubmittingLeaderRequest(false);
     }
   };
 
@@ -274,7 +346,7 @@ const HomePage: React.FC = () => {
       });
       setIsModalOpen(false);
       loadAllData();
-      setNewGroup({ subject: '', goal: '', description: '', max_members: 5, location: '', faculty: '' });
+      setNewGroup({ subject: '', goal: '', description: '', max_members: 5, location: '', faculty: '', status: 'open' });
     } catch (err: any) {
       alert("Failed to create group: " + err.message);
     }
@@ -300,7 +372,8 @@ const HomePage: React.FC = () => {
       description: group.description,
       max_members: group.max_members,
       location: group.location,
-      faculty: group.faculty
+      faculty: group.faculty,
+      status: group.status || 'open'
     });
   };
 
@@ -348,7 +421,7 @@ const HomePage: React.FC = () => {
     return (
       <div
         key={group.id}
-        className="flex-shrink-0 w-96 bg-white border border-slate-200 rounded-2xl p-6 hover:shadow-lg hover:border-orange-200 transition-all"
+        className="flex-shrink-0 w-[min(22rem,calc(100vw-2rem))] bg-white border border-slate-200 rounded-2xl p-6 hover:shadow-lg hover:border-orange-200 transition-all"
       >
         <div className="flex items-center gap-3 mb-4">
           <Link
@@ -467,13 +540,43 @@ const HomePage: React.FC = () => {
               </span>
             )}
           </button>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-orange-200 transition-all hover:-translate-y-0.5"
-          >
-            <Plus size={20} />
-            <span>Create Group</span>
-          </button>
+          {currentUser?.role === 'member' ? (
+            leaderRequestStatus?.status === 'pending' ? (
+              <button
+                disabled
+                className="flex items-center justify-center gap-2 bg-amber-100 text-amber-600 border-2 border-amber-200 px-6 py-3 rounded-2xl font-bold cursor-not-allowed"
+                title="Your leader request is pending admin review"
+              >
+                <Clock size={20} />
+                <span>Request Pending</span>
+              </button>
+            ) : leaderRequestStatus?.status === 'rejected' ? (
+              <button
+                onClick={() => setShowLeaderRequestModal(true)}
+                className="flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-600 px-6 py-3 rounded-2xl font-bold transition-all"
+                title={leaderRequestStatus.admin_note ? `Rejected: ${leaderRequestStatus.admin_note}` : 'Previous request was rejected'}
+              >
+                <Crown size={20} />
+                <span>Re-request Leader</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowLeaderRequestModal(true)}
+                className="flex items-center justify-center gap-2 bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-purple-200 transition-all hover:-translate-y-0.5"
+              >
+                <Crown size={20} />
+                <span>Request Leader Role</span>
+              </button>
+            )
+          ) : (
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-orange-200 transition-all hover:-translate-y-0.5"
+            >
+              <Plus size={20} />
+              <span>Create Group</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -1019,8 +1122,8 @@ const HomePage: React.FC = () => {
            <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="bg-orange-500 p-10 flex justify-between items-center text-white">
               <div>
-                <h3 className="text-3xl font-black tracking-tight">New Hub</h3>
-                <p className="text-orange-100 text-sm font-bold mt-1">Setup your persistent study group</p>
+                <h3 className="text-3xl font-black tracking-tight">New Group</h3>
+                <p className="text-orange-100 text-sm font-bold mt-1">Create a new study group</p>
               </div>
               <button onClick={() => setIsModalOpen(false)} className="bg-white/20 hover:bg-white/30 p-3 rounded-2xl transition-all">
                 <X size={24} />
@@ -1104,6 +1207,31 @@ const HomePage: React.FC = () => {
                     onChange={e => setNewGroup({...newGroup, location: e.target.value})}
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Group Status</label>
+                <div className="grid grid-cols-2 gap-3">
+                  {(['open', 'closed'] as const).map(s => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setNewGroup({...newGroup, status: s})}
+                      className={`py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all border-2 ${
+                        newGroup.status === s
+                          ? s === 'open'
+                            ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-100'
+                            : 'bg-slate-700 border-slate-700 text-white shadow-lg shadow-slate-100'
+                          : 'bg-slate-50 border-slate-200 text-slate-400 hover:border-slate-300'
+                      }`}
+                    >
+                      {s === 'open' ? 'Open' : 'Closed'}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-slate-400 ml-2">
+                  {newGroup.status === 'open' ? 'Anyone can join immediately' : 'Members must request to join'}
+                </p>
               </div>
 
               <div className="pt-4 flex gap-4">
@@ -1205,6 +1333,30 @@ const HomePage: React.FC = () => {
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Group Status</label>
+                <div className="grid grid-cols-3 gap-3">
+                  {(['open', 'closed', 'archived'] as const).map(s => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setEditGroupData({...editGroupData, status: s})}
+                      className={`py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all border-2 ${
+                        editGroupData.status === s
+                          ? s === 'open'
+                            ? 'bg-green-500 border-green-500 text-white shadow-lg shadow-green-100'
+                            : s === 'closed'
+                            ? 'bg-slate-700 border-slate-700 text-white shadow-lg shadow-slate-100'
+                            : 'bg-amber-500 border-amber-500 text-white shadow-lg shadow-amber-100'
+                          : 'bg-slate-50 border-slate-200 text-slate-400 hover:border-slate-300'
+                      }`}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="pt-4 flex gap-4">
                 <button
                   type="button"
@@ -1237,6 +1389,63 @@ const HomePage: React.FC = () => {
           onDelete={handleDeleteFromModal}
           onRefresh={loadAllData}
         />
+      )}
+
+      {/* Leader Request Modal */}
+      {showLeaderRequestModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="bg-purple-500 p-8 flex justify-between items-center text-white">
+              <div>
+                <div className="flex items-center gap-3 mb-1">
+                  <Crown size={24} />
+                  <h3 className="text-2xl font-black tracking-tight">Request Leader Role</h3>
+                </div>
+                <p className="text-purple-100 text-sm font-bold">Ask admin to grant you group leader access</p>
+              </div>
+              <button onClick={() => setShowLeaderRequestModal(false)} className="bg-white/20 hover:bg-white/30 p-3 rounded-2xl transition-all">
+                <X size={24} />
+              </button>
+            </div>
+
+            <form onSubmit={handleLeaderRequestSubmit} className="p-8 space-y-6">
+              <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4 text-sm text-purple-800 font-medium">
+                As a <strong>Group Leader</strong> you can create and manage study groups, invite members, schedule meetings, and more.
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Why do you want to be a leader? (optional)</label>
+                <textarea
+                  rows={3}
+                  className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all outline-none text-sm font-bold resize-none"
+                  placeholder="Describe your interest in leading a study group..."
+                  value={leaderRequestReason}
+                  onChange={e => setLeaderRequestReason(e.target.value)}
+                  maxLength={500}
+                />
+                <p className="text-[10px] text-slate-400 text-right">{leaderRequestReason.length}/500</p>
+              </div>
+
+              <div className="flex gap-4">
+                <button
+                  type="button"
+                  onClick={() => setShowLeaderRequestModal(false)}
+                  className="flex-1 px-6 py-4 border-2 border-slate-100 rounded-2xl font-black text-xs uppercase tracking-widest text-slate-400 hover:bg-slate-50 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingLeaderRequest}
+                  className="flex-1 px-6 py-4 bg-purple-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-purple-600 shadow-xl shadow-purple-100 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {submittingLeaderRequest ? <Loader2 size={16} className="animate-spin" /> : <Crown size={16} />}
+                  Submit Request
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

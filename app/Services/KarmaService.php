@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\KarmaLog;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
 
@@ -186,6 +187,7 @@ class KarmaService
     private static function addKarma(User $user, int $points, string $reason): void
     {
         $user->increment('karma_points', $points);
+        KarmaLog::create(['user_id' => $user->id, 'points' => $points, 'reason' => $reason]);
         Log::info("Karma awarded: User {$user->id} ({$user->name}) +{$points} - {$reason}");
     }
 
@@ -196,6 +198,7 @@ class KarmaService
     {
         $newKarma = max(0, $user->karma_points - $points);
         $user->update(['karma_points' => $newKarma]);
+        KarmaLog::create(['user_id' => $user->id, 'points' => -$points, 'reason' => $reason]);
         Log::info("Karma deducted: User {$user->id} ({$user->name}) -{$points} - {$reason}");
     }
 

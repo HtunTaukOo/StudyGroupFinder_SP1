@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Send, Calendar as CalendarIcon, MessageSquare, Info, MoreHorizontal, Sparkles, Loader2, BookOpen, Mic, X, Users as UsersIcon, Clock, MapPin, Search, Archive, Unlock, Lock as LockIcon, CheckCircle2, Edit2, Trash2, Bell, UserX, Paperclip, File as FileIcon, LogOut, Repeat, Plus, UserPlus, Check, ChevronDown } from 'lucide-react';
+import { Send, Calendar as CalendarIcon, MessageSquare, Info, MoreHorizontal, Sparkles, Loader2, BookOpen, Mic, X, Users as UsersIcon, Clock, MapPin, Search, Archive, Unlock, Lock as LockIcon, Edit2, Trash2, Bell, UserX, Paperclip, File as FileIcon, Video, LogOut, Repeat, Plus, UserPlus, Check, ChevronDown } from 'lucide-react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { StudyGroup, Message, User, GroupStatus, GroupMember } from '../types';
 import { geminiService } from '../services/geminiService';
@@ -89,7 +89,8 @@ const GroupsPage: React.FC = () => {
     max_members: 5,
     location: '',
     subject: '',
-    faculty: ''
+    faculty: '',
+    status: 'open'
   });
 
   const [currentUser] = useState<User | null>(() => {
@@ -479,20 +480,6 @@ const GroupsPage: React.FC = () => {
     }
   };
 
-  const updateStatus = async (status: GroupStatus) => {
-    if (!activeGroupId) return;
-    setIsUpdatingStatus(true);
-    try {
-      await apiService.updateGroup(activeGroupId, { status });
-      await fetchMyGroups();
-      setIsStatusMenuOpen(false);
-    } catch (err) {
-      alert("Failed to update status");
-    } finally {
-      setIsUpdatingStatus(false);
-    }
-  };
-
   const handleOpenEditModal = () => {
     if (!activeGroup) return;
     setEditGroupData({
@@ -501,8 +488,10 @@ const GroupsPage: React.FC = () => {
       max_members: activeGroup.max_members,
       location: activeGroup.location,
       subject: activeGroup.subject,
-      faculty: activeGroup.faculty
+      faculty: activeGroup.faculty,
+      status: activeGroup.status || 'open'
     });
+    setShowMembersModal(false);
     setIsEditModalOpen(true);
     setIsStatusMenuOpen(false);
   };
@@ -936,38 +925,35 @@ const GroupsPage: React.FC = () => {
                    >
                      <MoreHorizontal size={20} />
                    </button>
-                   {isStatusMenuOpen && isLeader && (
+                   {isStatusMenuOpen && (
                       <div className="absolute top-12 right-0 w-56 bg-white border border-slate-200 rounded-2xl shadow-xl z-20 overflow-hidden animate-in fade-in slide-in-from-top-2">
-                        <div className="p-3 border-b border-slate-50">
-                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-2">Manage Hub</p>
-                        </div>
-                        <button 
-                          onClick={() => updateStatus(GroupStatus.OPEN)}
-                          disabled={isUpdatingStatus}
-                          className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-emerald-50 transition-colors ${activeGroup.status === GroupStatus.OPEN ? 'text-emerald-600 bg-emerald-50' : 'text-slate-600'}`}
-                        >
-                          <Unlock size={14} />
-                          <span className="text-xs font-bold flex-1">Set Open</span>
-                          {activeGroup.status === GroupStatus.OPEN && <CheckCircle2 size={12} />}
-                        </button>
-                        <button 
-                          onClick={() => updateStatus(GroupStatus.CLOSED)}
-                          disabled={isUpdatingStatus}
-                          className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-amber-50 transition-colors ${activeGroup.status === GroupStatus.CLOSED ? 'text-amber-600 bg-amber-50' : 'text-slate-600'}`}
-                        >
-                          <LockIcon size={14} />
-                          <span className="text-xs font-bold flex-1">Set Closed</span>
-                          {activeGroup.status === GroupStatus.CLOSED && <CheckCircle2 size={12} />}
-                        </button>
-                        <button
-                          onClick={() => updateStatus(GroupStatus.ARCHIVED)}
-                          disabled={isUpdatingStatus}
-                          className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-100 transition-colors ${activeGroup.status === GroupStatus.ARCHIVED ? 'text-slate-900 bg-slate-50' : 'text-slate-400'}`}
-                        >
-                          <Archive size={14} />
-                          <span className="text-xs font-bold flex-1">Archive</span>
-                          {activeGroup.status === GroupStatus.ARCHIVED && <CheckCircle2 size={12} />}
-                        </button>
+                        {isLeader ? (
+                          <>
+                            <button
+                              onClick={() => { handleOpenEditModal(); setIsStatusMenuOpen(false); }}
+                              className="w-full flex items-center gap-3 px-4 py-3 text-left text-slate-600 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+                            >
+                              <Edit2 size={14} />
+                              <span className="text-xs font-bold flex-1">Edit Group</span>
+                            </button>
+                            <button
+                              onClick={() => { handleDeleteGroup(); setIsStatusMenuOpen(false); }}
+                              className="w-full flex items-center gap-3 px-4 py-3 text-left text-red-500 hover:bg-red-50 transition-colors"
+                            >
+                              <Trash2 size={14} />
+                              <span className="text-xs font-bold flex-1">Delete Group</span>
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => { handleLeaveGroup(); setIsStatusMenuOpen(false); }}
+                            disabled={leavingGroup}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-left text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
+                          >
+                            {leavingGroup ? <Loader2 size={14} className="animate-spin" /> : <LogOut size={14} />}
+                            <span className="text-xs font-bold flex-1">Leave Group</span>
+                          </button>
+                        )}
                       </div>
                    )}
                 </div>
@@ -1008,10 +994,28 @@ const GroupsPage: React.FC = () => {
                   )}
 
                   {messages.map((msg, idx) => {
+                    if (msg.type === 'system') {
+                      return (
+                        <div key={msg.id} className="flex items-center gap-3 py-1 px-2">
+                          <div className="flex-1 h-px bg-slate-200" />
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">
+                            {msg.user_name} joined the group
+                          </span>
+                          <div className="flex-1 h-px bg-slate-200" />
+                        </div>
+                      );
+                    }
+
                     const isMe = msg.user_id === currentUser?.id;
                     const isGroupLeader = msg.user_id === activeGroup.creator_id;
                     const isImage = msg.file_type?.startsWith('image/');
-                    const fileUrl = msg.file_path ? `${API_CONFIG.BASE_URL.replace('/api', '')}/storage/${msg.file_path}` : null;
+                    const isVideo = msg.file_type?.startsWith('video/');
+                    const fileUrl = msg.file_path ? `${API_CONFIG.STORAGE_URL}/${msg.file_path}` : null;
+                    const fileSizeLabel = msg.file_size
+                      ? msg.file_size >= 1024 * 1024
+                        ? `${(msg.file_size / (1024 * 1024)).toFixed(1)} MB`
+                        : `${(msg.file_size / 1024).toFixed(1)} KB`
+                      : 'File';
 
                     return (
                       <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
@@ -1043,6 +1047,20 @@ const GroupsPage: React.FC = () => {
                                     <span className="truncate">{msg.file_name}</span>
                                   </div>
                                 </a>
+                              ) : isVideo && fileUrl ? (
+                                <div>
+                                  <video
+                                    src={fileUrl}
+                                    controls
+                                    className="max-w-full max-h-64 rounded-xl border-2 border-white/20"
+                                    preload="metadata"
+                                  />
+                                  <div className={`flex items-center gap-2 mt-2 text-xs ${isMe ? 'text-orange-100' : 'text-slate-500'}`}>
+                                    <Video size={14} />
+                                    <span className="truncate">{msg.file_name}</span>
+                                    <span className="shrink-0">· {fileSizeLabel}</span>
+                                  </div>
+                                </div>
                               ) : (
                                 <a
                                   href={fileUrl || '#'}
@@ -1060,7 +1078,7 @@ const GroupsPage: React.FC = () => {
                                       {msg.file_name}
                                     </div>
                                     <div className={`text-xs ${isMe ? 'text-orange-100' : 'text-slate-500'}`}>
-                                      {msg.file_size ? `${(msg.file_size / 1024).toFixed(1)} KB` : 'File'}
+                                      {fileSizeLabel}
                                     </div>
                                   </div>
                                 </a>
@@ -1088,9 +1106,13 @@ const GroupsPage: React.FC = () => {
             <form onSubmit={handleSendMessage} className={`p-6 bg-white border-t border-slate-100 ${activeGroup.status === GroupStatus.ARCHIVED ? 'pointer-events-none opacity-50 grayscale' : ''}`}>
               {selectedFile && (
                 <div className="mb-3 flex items-center gap-2 bg-orange-50 border border-orange-200 px-4 py-2 rounded-xl">
-                  <FileIcon size={16} className="text-orange-600" />
+                  {selectedFile.type.startsWith('video/') ? <Video size={16} className="text-orange-600" /> : <FileIcon size={16} className="text-orange-600" />}
                   <span className="text-sm font-semibold text-orange-900 flex-1 truncate">{selectedFile.name}</span>
-                  <span className="text-xs text-orange-600">{(selectedFile.size / 1024).toFixed(1)} KB</span>
+                  <span className="text-xs text-orange-600">
+                    {selectedFile.size >= 1024 * 1024
+                      ? `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB`
+                      : `${(selectedFile.size / 1024).toFixed(1)} KB`}
+                  </span>
                   <button
                     type="button"
                     onClick={() => {
@@ -1107,7 +1129,7 @@ const GroupsPage: React.FC = () => {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*,.pdf,.doc,.docx,.txt"
+                  accept="image/*,video/*,.pdf,.doc,.docx,.txt"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (file) setSelectedFile(file);
@@ -1210,7 +1232,7 @@ const GroupsPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Max Students</label>
-                  <input 
+                  <input
                     type="number"
                     min={2}
                     className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none text-sm font-bold"
@@ -1220,12 +1242,36 @@ const GroupsPage: React.FC = () => {
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Location</label>
-                  <input 
-                    required 
+                  <input
+                    required
                     className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none text-sm font-bold"
                     value={editGroupData.location}
                     onChange={e => setEditGroupData({...editGroupData, location: e.target.value})}
                   />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Group Status</label>
+                <div className="grid grid-cols-3 gap-3">
+                  {(['open', 'closed', 'archived'] as const).map(s => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setEditGroupData({...editGroupData, status: s})}
+                      className={`py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all border-2 ${
+                        editGroupData.status === s
+                          ? s === 'open'
+                            ? 'bg-green-500 border-green-500 text-white shadow-lg shadow-green-100'
+                            : s === 'closed'
+                            ? 'bg-slate-700 border-slate-700 text-white shadow-lg shadow-slate-100'
+                            : 'bg-amber-500 border-amber-500 text-white shadow-lg shadow-amber-100'
+                          : 'bg-slate-50 border-slate-200 text-slate-400 hover:border-slate-300'
+                      }`}
+                    >
+                      {s}
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -1494,36 +1540,6 @@ const GroupsPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Footer */}
-            <div className="p-6 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
-              {isLeader ? (
-                <>
-                  <button
-                    onClick={handleOpenEditModal}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-orange-500 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-orange-600 transition-all"
-                  >
-                    <Edit2 size={14} />
-                    Edit Group
-                  </button>
-                  <button
-                    onClick={handleDeleteGroup}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-red-500 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-red-600 transition-all"
-                  >
-                    <Trash2 size={14} />
-                    Delete Group
-                  </button>
-                </>
-              ) : (
-                <button
-                  onClick={handleLeaveGroup}
-                  disabled={leavingGroup}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-red-500 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-red-600 transition-all disabled:opacity-50"
-                >
-                  {leavingGroup ? <Loader2 size={14} className="animate-spin" /> : <LogOut size={14} />}
-                  Leave Group
-                </button>
-              )}
-            </div>
           </div>
         </div>
       )}

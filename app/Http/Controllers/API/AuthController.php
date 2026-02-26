@@ -5,28 +5,53 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Mail\EmailVerificationMail;
+use App\Mail\PasswordResetMail;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    private const DASHBOARD_CACHE_KEY = 'admin_dashboard_stats_v2';
+    private const ANALYTICS_CACHE_KEY_PREFIX = 'admin_analytics_v2_';
+
+    private function clearAdminCaches(): void
+    {
+        // Current cache keys
+        Cache::forget(self::DASHBOARD_CACHE_KEY);
+        Cache::forget(self::ANALYTICS_CACHE_KEY_PREFIX . 'daily');
+        Cache::forget(self::ANALYTICS_CACHE_KEY_PREFIX . 'weekly');
+        Cache::forget(self::ANALYTICS_CACHE_KEY_PREFIX . 'monthly');
+
+        // Legacy cache keys
+        Cache::forget('admin_dashboard_stats');
+        Cache::forget('admin_analytics_daily');
+        Cache::forget('admin_analytics_weekly');
+        Cache::forget('admin_analytics_monthly');
+    }
+
     public function register(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
+            'major' => 'nullable|string|max:255',
         ]);
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'major' => $request->major,
             'role' => 'member', // Default role for all new users
         ]);
+
+        $this->clearAdminCaches();
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -168,6 +193,62 @@ class AuthController extends Controller
         return response()->json([
             'message' => 'Verification email sent successfully.'
         ], 200);
+    }
+
+    /**
+     * Send password reset link to user's email
+     */
+    public function forgotPassword(Request $request)
+    {
+        $request->validate(['email' => 'required|email']);
+
+        $user = User::where('email', $request->email)->first();
+
+        // Always return success to prevent email enumeration
+        if (!$user) {
+            return response()->json(['message' => 'If an account with that email exists, a reset link has been sent.']);
+        }
+
+        $token = Password::createToken($user);
+
+        $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000/study-group-finder');
+        $resetUrl = $frontendUrl . '/#/reset-password?token=' . $token . '&email=' . urlencode($user->email);
+
+        try {
+            Mail::to($user->email)->send(new PasswordResetMail($user->name, $resetUrl));
+        } catch (\Exception $e) {
+            \Log::error('Failed to send password reset email: ' . $e->getMessage());
+        }
+
+        return response()->json(['message' => 'If an account with that email exists, a reset link has been sent.']);
+    }
+
+    /**
+     * Reset password using token from email
+     */
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'token'                 => 'required',
+            'email'                 => 'required|email',
+            'password'              => 'required|string|min:8|confirmed',
+        ]);
+
+        $status = Password::reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function ($user, $password) {
+                $user->password = Hash::make($password);
+                $user->save();
+                // Revoke all old tokens so old sessions are invalidated
+                $user->tokens()->delete();
+            }
+        );
+
+        if ($status === Password::PASSWORD_RESET) {
+            return response()->json(['message' => 'Password reset successfully. You can now log in.']);
+        }
+
+        return response()->json(['message' => 'This reset link is invalid or has expired.'], 422);
     }
 
     /**

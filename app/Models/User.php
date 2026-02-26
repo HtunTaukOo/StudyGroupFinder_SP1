@@ -18,11 +18,14 @@ class User extends Authenticatable implements MustVerifyEmail
 
     protected $fillable = [
         'name', 'email', 'password', 'role', 'major', 'bio', 'location', 'karma_points',
-        'suspended_until', 'suspension_reason', 'banned_reason'
+        'suspended_until', 'suspension_reason', 'banned_reason',
+        'privacy_stats', 'privacy_activity',
     ];
 
     protected $casts = [
-        'suspended_until' => 'datetime',
+        'suspended_until'  => 'datetime',
+        'privacy_stats'    => 'boolean',
+        'privacy_activity' => 'boolean',
     ];
 
     protected $hidden = [

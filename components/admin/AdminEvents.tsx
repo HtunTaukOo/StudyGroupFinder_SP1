@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, MapPin, Users, Trash2, Search, Filter, Loader2, Clock, Repeat, RefreshCw, Edit2, X } from 'lucide-react';
 import AdminLayout from './AdminLayout';
+import { API_CONFIG } from '../../constants';
 
 interface Event {
   id: string;
@@ -75,7 +76,7 @@ const AdminEvents: React.FC = () => {
         ...(statusFilter && { status: statusFilter }),
       });
 
-      const response = await fetch(`http://localhost:8000/api/admin/events?${params}`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/admin/events?${params}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -125,7 +126,7 @@ const AdminEvents: React.FC = () => {
       const user = JSON.parse(userStr);
       const token = user.token;
 
-      const response = await fetch(`http://localhost:8000/api/admin/events/${eventId}`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/admin/events/${eventId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -157,7 +158,7 @@ const AdminEvents: React.FC = () => {
       const user = JSON.parse(userStr);
       const token = user.token;
 
-      const response = await fetch(`http://localhost:8000/api/admin/events/${editingEvent.id}`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/admin/events/${editingEvent.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

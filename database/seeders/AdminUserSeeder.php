@@ -13,38 +13,29 @@ class AdminUserSeeder extends Seeder
      */
     public function run(): void
     {
-        $admins = [
-            [
-                'name' => 'Admin',
-                'email' => 'admin@au.edu',
-                'password' => Hash::make('admin123'),
-                'role' => 'admin',
-                'major' => 'Administration',
-                'bio' => 'System Administrator',
-                'location' => 'AU Campus',
-            ],
-            [
-                'name' => 'StudyHub Admin',
-                'email' => 'studyhub.studygroupfinder@gmail.com',
-                'password' => Hash::make('studygroupfinder123'),
-                'role' => 'admin',
-                'major' => 'Administration',
-                'bio' => 'StudyHub System Administrator',
-                'location' => 'AU Campus',
-            ],
+        $adminData = [
+            'name' => 'StudyHub Admin',
+            'email' => 'studyhub.studygroupfinder@gmail.com',
+            'password' => Hash::make('studygroupfinder123'),
+            'role' => 'admin',
+            'major' => 'Administration',
+            'bio' => 'StudyHub System Administrator',
+            'location' => 'AU Campus',
         ];
 
-        foreach ($admins as $adminData) {
-            $existingAdmin = User::where('email', $adminData['email'])->first();
+        $existingAdmin = User::where('email', $adminData['email'])->first();
 
-            if (!$existingAdmin) {
-                User::create($adminData);
-                $this->command->info('Admin user created: ' . $adminData['email']);
-            } else {
-                // Update existing admin to have admin role
-                $existingAdmin->update(['role' => 'admin']);
-                $this->command->info('Admin user already exists (role updated): ' . $adminData['email']);
-            }
+        if (!$existingAdmin) {
+            User::create($adminData);
+            $this->command->info('Admin user created: ' . $adminData['email']);
+        } else {
+            $existingAdmin->update(['role' => 'admin']);
+            $this->command->info('Admin user already exists (role updated): ' . $adminData['email']);
         }
+
+        // Demote any other user with admin role (there can only be one admin)
+        User::where('role', 'admin')
+            ->where('email', '!=', 'studyhub.studygroupfinder@gmail.com')
+            ->update(['role' => 'member']);
     }
 }

@@ -22,7 +22,7 @@ class MessageController extends Controller {
         // Validate: content or file must be present
         $request->validate([
             'content' => 'nullable|string',
-            'file' => 'nullable|file|max:10240' // 10MB max
+            'file' => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,txt,mp4,mov,avi,mkv,webm|max:102400' // 100MB max
         ]);
 
         // At least one of content or file must be present

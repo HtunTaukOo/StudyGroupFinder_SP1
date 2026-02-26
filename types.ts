@@ -17,6 +17,8 @@ export interface User {
   location?: string;
   warnings?: number;
   banned?: boolean;
+  privacy_stats?: boolean;
+  privacy_activity?: boolean;
 }
 
 export interface StudyGroup {
@@ -57,6 +59,7 @@ export interface Message {
   user_id: string;
   user_name: string;
   content: string;
+  type?: string;
   file_path?: string;
   file_name?: string;
   file_type?: string;

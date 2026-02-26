@@ -29,6 +29,10 @@ Recommended: deploy as **2 services** from the same repo.
 - Service A: `api` (Laravel backend)
 - Service B: `web` (Vite frontend)
 
+Set per-service config file in Railway:
+- API service: `NIXPACKS_CONFIG_FILE=nixpacks.api.toml`
+- Frontend service: `NIXPACKS_CONFIG_FILE=nixpacks.frontend.toml`
+
 ### Service A (Laravel API)
 
 Use these commands in Railway:

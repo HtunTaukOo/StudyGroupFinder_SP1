@@ -2,11 +2,13 @@ providers = ["php", "node"]
 
 [phases.install]
 cmds = [
+  "npm install",
   "composer install --no-dev --optimize-autoloader --no-scripts --no-interaction"
 ]
 
 [phases.build]
 cmds = [
+  "npm run build",
   "php artisan package:discover --ansi || true",
   "php artisan config:clear || true"
 ]

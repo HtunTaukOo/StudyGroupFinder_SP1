@@ -1,7 +1,15 @@
-providers = ["php", "node"]
+providers = ["php"]
 
 [phases.install]
-cmds = []
+cmds = [
+  "composer install --no-dev --optimize-autoloader --no-interaction"
+]
 
 [phases.build]
-cmds = []
+cmds = [
+  "php artisan package:discover --ansi",
+  "php artisan config:clear"
+]
+
+[start]
+cmd = "php artisan serve --host=0.0.0.0 --port=${PORT:-8080}"

@@ -24,7 +24,12 @@
       "Bash(PGPASSWORD=root /Library/PostgreSQL/17/bin/psql:*)",
       "Bash(PGPASSWORD=admin /Library/PostgreSQL/17/bin/psql:*)",
       "Bash(PGPASSWORD=hT024112001 /Library/PostgreSQL/17/bin/psql:*)",
-      "Bash(php:*)"
+      "Bash(php:*)",
+      "Bash(git rm nixpacks.toml)",
+      "Bash(git commit -m \"Remove nixpacks.toml - use Railway dashboard build commands instead\")",
+      "Bash(git push)",
+      "Bash(git add nixpacks.toml)",
+      "Bash(git commit -m \"Add nixpacks.toml: disable auto-install so Railway build commands control everything\")"
     ]
   }
 }

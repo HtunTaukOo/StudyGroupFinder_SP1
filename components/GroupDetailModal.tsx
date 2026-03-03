@@ -3,6 +3,7 @@ import { X, Users, MapPin, Calendar, Loader2, MessageSquare, UserMinus, Trash2, 
 import { Link, useNavigate } from 'react-router-dom';
 import { StudyGroup, GroupMember, GroupStatus, User, Rating } from '../types';
 import { apiService } from '../services/apiService';
+import { API_CONFIG } from '../constants';
 import StarRating from './StarRating';
 
 interface GroupDetailModalProps {
@@ -316,8 +317,11 @@ const GroupDetailModal: React.FC<GroupDetailModalProps> = ({
                     onClick={onClose}
                     className="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-xl hover:shadow-md hover:border-orange-200 transition-all group"
                   >
-                    <div className="w-10 h-10 bg-orange-100 text-orange-600 rounded-lg flex items-center justify-center font-bold text-sm border border-orange-200 group-hover:scale-105 transition-transform">
-                      {member.name[0]}
+                    <div className="w-10 h-10 bg-orange-100 text-orange-600 rounded-lg flex items-center justify-center font-bold text-sm border border-orange-200 group-hover:scale-105 transition-transform overflow-hidden">
+                      {member.avatar
+                        ? <img src={`${API_CONFIG.STORAGE_URL}/${member.avatar}`} alt={member.name} className="w-full h-full object-cover" />
+                        : member.name[0]
+                      }
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-slate-900 text-sm truncate group-hover:text-orange-500 transition-colors">

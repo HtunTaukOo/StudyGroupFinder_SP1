@@ -62,6 +62,11 @@ const isAdmin = () => {
   return s ? JSON.parse(s).role === 'admin' : false;
 };
 
+const isAdminOrModerator = () => {
+  const s = localStorage.getItem('admin_auth');
+  return s ? ['admin', 'moderator'].includes(JSON.parse(s).role) : false;
+};
+
 const getTimeAgo = (date: Date | null) => {
   if (!date) return 'Never';
   const sec = Math.floor((Date.now() - date.getTime()) / 1000);
@@ -481,7 +486,9 @@ const AdminGroups: React.FC = () => {
                     <tr key={group.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-5 py-4">
                         <p className="font-bold text-slate-900">{group.name}</p>
-                        <p className="text-sm text-slate-500">{group.subject}</p>
+                        {group.subject && group.subject !== group.name && (
+                          <p className="text-sm text-slate-500">{group.subject}</p>
+                        )}
                         {renderGroupRating(group.id)}
                       </td>
                       <td className="px-5 py-4">
@@ -504,11 +511,11 @@ const AdminGroups: React.FC = () => {
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <button onClick={() => handleViewMeetings(group)} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="View meetings"><Calendar size={16} /></button>
                           <button onClick={() => handleViewChatLogs(group)} className="p-2 text-teal-600 hover:bg-teal-50 rounded-lg transition-all" title="Chat logs"><MessageSquare size={16} /></button>
+                          {isAdminOrModerator() && group.approval_status === 'pending' && (<>
+                            <button onClick={() => setApprovingGroup(group)} className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all" title="Approve"><CheckCircle size={16} /></button>
+                            <button onClick={() => setRejectingGroup(group)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Reject"><XCircle size={16} /></button>
+                          </>)}
                           {isAdmin() && (<>
-                            {group.approval_status === 'pending' && (<>
-                              <button onClick={() => setApprovingGroup(group)} className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all" title="Approve"><CheckCircle size={16} /></button>
-                              <button onClick={() => setRejectingGroup(group)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Reject"><XCircle size={16} /></button>
-                            </>)}
                             <button onClick={() => handleOpenTransferModal(group)} className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-all" title="Transfer ownership"><UserCheck size={16} /></button>
                             <button onClick={() => handleEdit(group)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Edit"><Edit2 size={16} /></button>
                             <button onClick={() => setDeleteConfirm(group.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Delete"><Trash2 size={16} /></button>

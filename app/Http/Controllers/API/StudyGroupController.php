@@ -854,16 +854,22 @@ class StudyGroupController extends Controller
     }
 
     /**
-     * Transfer group ownership to another member (Admin only)
+     * Transfer group ownership to another member (Leader of that group or Admin)
      */
     public function transferOwnership(Request $request, $groupId)
     {
+        $user = Auth::user();
         $validated = $request->validate([
             'new_owner_id' => 'required|exists:users,id'
         ]);
 
         $group = StudyGroup::with('members')->findOrFail($groupId);
         $newOwnerId = $validated['new_owner_id'];
+
+        // Only the current group leader or an admin can transfer ownership
+        if ($group->creator_id !== $user->id && $user->role !== 'admin') {
+            return response()->json(['message' => 'Only the group leader can transfer ownership.'], 403);
+        }
 
         // Check if new owner is a member of the group
         $isNewOwnerMember = $group->members()->where('users.id', $newOwnerId)->exists();

@@ -46,6 +46,7 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\SuspendedUserMiddleware:
     Route::post('/groups/{groupId}/approve/{userId}', [StudyGroupController::class, 'approveRequest']);
     Route::post('/groups/{groupId}/reject/{userId}', [StudyGroupController::class, 'rejectRequest']);
     Route::post('/groups/{groupId}/kick/{userId}', [StudyGroupController::class, 'kickMember']);
+    Route::post('/groups/{id}/transfer-ownership', [StudyGroupController::class, 'transferOwnership']);
 
     // Group invitations
     Route::post('/groups/{groupId}/invite', [StudyGroupController::class, 'inviteMember']);

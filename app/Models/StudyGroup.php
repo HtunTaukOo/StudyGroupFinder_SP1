@@ -17,7 +17,7 @@ class StudyGroup extends Model
         'approved_at' => 'datetime',
     ];
 
-    protected $appends = ['members_count', 'creator_name', 'is_member', 'has_pending_request', 'pending_requests_count', 'avg_group_rating', 'avg_leader_rating', 'total_ratings'];
+    protected $appends = ['members_count', 'creator_name', 'creator_avatar', 'is_member', 'has_pending_request', 'pending_requests_count', 'avg_group_rating', 'avg_leader_rating', 'total_ratings'];
 
     public function creator() {
         return $this->belongsTo(User::class, 'creator_id');
@@ -102,6 +102,10 @@ class StudyGroup extends Model
 
     public function getCreatorNameAttribute() {
         return $this->creator->name ?? 'Unknown';
+    }
+
+    public function getCreatorAvatarAttribute() {
+        return $this->creator->avatar ?? null;
     }
 
     public function getIsMemberAttribute() {

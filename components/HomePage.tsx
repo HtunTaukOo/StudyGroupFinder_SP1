@@ -429,9 +429,12 @@ const HomePage: React.FC = () => {
         <div className="flex items-center gap-3 mb-4">
           <Link
             to={`/profile/${group.creator_id}`}
-            className="w-12 h-12 bg-orange-100 text-orange-600 rounded-xl flex items-center justify-center font-bold text-sm border border-orange-200 cursor-pointer hover:scale-105 transition-transform"
+            className="w-12 h-12 bg-orange-100 text-orange-600 rounded-xl flex items-center justify-center font-bold text-xl border border-orange-200 cursor-pointer hover:scale-105 transition-transform overflow-hidden"
           >
-            {group.creator_name[0]}
+            {group.creator_avatar
+              ? <img src={`${API_CONFIG.STORAGE_URL}/${group.creator_avatar}`} alt={group.creator_name} className="w-full h-full object-cover" />
+              : group.name[0].toUpperCase()
+            }
           </Link>
           <div className="flex-1 min-w-0">
             <button
@@ -1018,9 +1021,12 @@ const HomePage: React.FC = () => {
                       <div className="flex items-center gap-4">
                         <Link
                           to={`/profile/${group.creator_id}`}
-                          className="w-14 h-14 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center font-black text-xl border border-orange-200/50 cursor-pointer hover:scale-105 transition-transform"
+                          className="w-14 h-14 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center font-black text-xl border border-orange-200/50 cursor-pointer hover:scale-105 transition-transform overflow-hidden"
                         >
-                          {group.creator_name ? group.creator_name[0] : 'U'}
+                          {group.creator_avatar
+                            ? <img src={`${API_CONFIG.STORAGE_URL}/${group.creator_avatar}`} alt={group.creator_name} className="w-full h-full object-cover" />
+                            : (group.creator_name ? group.creator_name[0] : 'U')
+                          }
                         </Link>
                         <div>
                           <div className="flex items-center gap-2">

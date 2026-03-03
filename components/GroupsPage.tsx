@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Send, Calendar as CalendarIcon, MessageSquare, Info, MoreHorizontal, Sparkles, Loader2, BookOpen, Mic, X, Users as UsersIcon, Clock, MapPin, Search, Archive, Unlock, Lock as LockIcon, Edit2, Trash2, Bell, UserX, Paperclip, File as FileIcon, Video, LogOut, Repeat, Plus, UserPlus, Check, ChevronDown, ChevronLeft, ExternalLink } from 'lucide-react';
+import { Send, Calendar as CalendarIcon, MessageSquare, Info, MoreHorizontal, Sparkles, Loader2, BookOpen, Mic, X, Users as UsersIcon, Clock, MapPin, Search, Archive, Unlock, Lock as LockIcon, Edit2, Trash2, Bell, UserX, Paperclip, File as FileIcon, Video, LogOut, Repeat, Plus, UserPlus, Check, ChevronDown, ChevronLeft, ExternalLink, Crown } from 'lucide-react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { StudyGroup, Message, User, GroupStatus, GroupMember } from '../types';
 import { geminiService } from '../services/geminiService';
@@ -33,6 +33,7 @@ const GroupsPage: React.FC = () => {
   const [showPendingRequestsModal, setShowPendingRequestsModal] = useState(false);
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [kickingMemberId, setKickingMemberId] = useState<number | null>(null);
+  const [transferringTo, setTransferringTo] = useState<number | null>(null);
   const [leavingGroup, setLeavingGroup] = useState(false);
   const [showArchivedGroups, setShowArchivedGroups] = useState(false);
   const [activeSection, setActiveSection] = useState<'created' | 'joined'>('created');
@@ -549,6 +550,26 @@ const GroupsPage: React.FC = () => {
       alert(err.message || 'Failed to remove member.');
     } finally {
       setKickingMemberId(null);
+    }
+  };
+
+  const handleTransferOwnership = async (userId: number, userName: string) => {
+    if (!activeGroupId || !activeGroup) return;
+    if (!confirm(`Transfer leadership of "${activeGroup.name}" to ${userName}?\n\nYou will become a regular member after this.`)) return;
+    setTransferringTo(userId);
+    try {
+      const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` };
+      const res = await fetch(`${API_CONFIG.BASE_URL}/groups/${activeGroupId}/transfer-ownership`, {
+        method: 'POST', headers, body: JSON.stringify({ new_owner_id: userId })
+      });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.message || 'Failed'); }
+      alert(`Leadership transferred to ${userName} successfully.`);
+      await fetchMyGroups();
+      await fetchGroupMembers(activeGroupId);
+    } catch (err: any) {
+      alert(err.message || 'Failed to transfer ownership.');
+    } finally {
+      setTransferringTo(null);
     }
   };
 
@@ -1488,19 +1509,26 @@ const GroupsPage: React.FC = () => {
                             </p>
                           </div>
                           {isLeader && !member.is_leader && (
-                            <button
-                              onClick={() => handleKickMember(member.id, member.name)}
-                              disabled={kickingMemberId === member.id}
-                              className="flex items-center gap-1.5 px-3 py-2 bg-red-500 text-white rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-red-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                              title="Remove member from group"
-                            >
-                              {kickingMemberId === member.id ? (
-                                <Loader2 size={14} className="animate-spin" />
-                              ) : (
-                                <UserX size={14} />
-                              )}
-                              Kick
-                            </button>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleTransferOwnership(member.id, member.name)}
+                                disabled={transferringTo === member.id}
+                                className="flex items-center gap-1.5 px-3 py-2 bg-amber-500 text-white rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-amber-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Transfer leadership to this member"
+                              >
+                                {transferringTo === member.id ? <Loader2 size={14} className="animate-spin" /> : <Crown size={14} />}
+                                Transfer
+                              </button>
+                              <button
+                                onClick={() => handleKickMember(member.id, member.name)}
+                                disabled={kickingMemberId === member.id}
+                                className="flex items-center gap-1.5 px-3 py-2 bg-red-500 text-white rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-red-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Remove member from group"
+                              >
+                                {kickingMemberId === member.id ? <Loader2 size={14} className="animate-spin" /> : <UserX size={14} />}
+                                Kick
+                              </button>
+                            </div>
                           )}
                         </div>
                       </div>

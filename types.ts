@@ -32,6 +32,7 @@ export interface StudyGroup {
   location: string;
   creator_id: string;
   creator_name: string;
+  creator_avatar?: string | null;
   status: GroupStatus;
   created_at: string;
   is_member?: boolean;

@@ -106,6 +106,14 @@ const AdminUsers: React.FC = () => {
     return role === 'admin';
   };
 
+  // Helper function to check if current user is admin or moderator
+  const isAdminOrModerator = (): boolean => {
+    const authData = localStorage.getItem('admin_auth');
+    if (!authData) return false;
+    const { role } = JSON.parse(authData);
+    return ['admin', 'moderator'].includes(role);
+  };
+
   // Helper function to check if user can be moderated (not admin/moderator)
   const canModerate = (user: UserData): boolean => {
     return !['admin', 'moderator'].includes(user.role);
@@ -767,7 +775,7 @@ const AdminUsers: React.FC = () => {
                         )}
                         <p className="text-xs text-slate-400 mt-1">{new Date(req.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                       </div>
-                      {req.status === 'pending' && isAdmin() && (
+                      {req.status === 'pending' && isAdminOrModerator() && (
                         <div className="flex items-center gap-2 flex-shrink-0">
                           <button
                             onClick={() => handleApproveRequest(req.id)}

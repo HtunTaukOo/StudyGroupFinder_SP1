@@ -1725,7 +1725,11 @@ const GroupsPage: React.FC = () => {
                               {event.location && (
                                 <span className="flex items-center gap-1.5">
                                   <MapPin size={14} />
-                                  <span className="font-medium truncate">{event.location}</span>
+                                  {/^https?:\/\//i.test(event.location) ? (
+                                    <a href={event.location} target="_blank" rel="noopener noreferrer" className="font-medium truncate text-orange-500 underline hover:text-orange-600">{event.location}</a>
+                                  ) : (
+                                    <span className="font-medium truncate">{event.location}</span>
+                                  )}
                                 </span>
                               )}
                             </div>

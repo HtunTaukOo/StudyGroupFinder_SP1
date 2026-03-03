@@ -398,6 +398,18 @@ export const apiService = {
     return handleResponse(res);
   },
 
+  async uploadAvatar(file: File): Promise<{ avatar: string }> {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    const headers = getHeaders();
+    const res = await fetch(`${BASE_URL}/profile/avatar`, {
+      method: 'POST',
+      headers: { 'Authorization': headers['Authorization'], 'Accept': 'application/json' },
+      body: formData
+    });
+    return handleResponse(res);
+  },
+
   async deleteAccount(data: { password: string }): Promise<{ message: string }> {
     const res = await fetch(`${BASE_URL}/profile`, {
       method: 'DELETE',

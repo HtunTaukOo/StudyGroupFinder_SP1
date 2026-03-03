@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class ProfileController extends Controller {
@@ -36,9 +37,33 @@ class ProfileController extends Controller {
 
     public function update(Request $request) {
         $user = Auth::user();
+
+        $request->validate([
+            'location' => ['nullable', 'string', 'max:100', 'not_regex:/https?:\/\/|www\./i'],
+            'bio'      => ['nullable', 'string', 'max:500'],
+            'major'    => ['nullable', 'string', 'max:100'],
+        ]);
+
         $user->update($request->only(['major', 'bio', 'location']));
         $this->clearAdminCaches();
         return $user;
+    }
+
+    public function uploadAvatar(Request $request) {
+        $request->validate([
+            'avatar' => 'required|image|mimes:jpg,jpeg,png,webp|max:2048'
+        ]);
+
+        $user = Auth::user();
+
+        if ($user->avatar) {
+            Storage::disk('public')->delete($user->avatar);
+        }
+
+        $path = $request->file('avatar')->store('avatars', 'public');
+        $user->update(['avatar' => $path]);
+
+        return response()->json(['avatar' => $path]);
     }
 
     public function stats() {

@@ -17,7 +17,7 @@ class User extends Authenticatable implements MustVerifyEmail
     const ROLE_ADMIN = 'admin';
 
     protected $fillable = [
-        'name', 'email', 'password', 'role', 'major', 'bio', 'location', 'karma_points',
+        'name', 'email', 'password', 'role', 'major', 'bio', 'location', 'avatar', 'karma_points',
         'suspended_until', 'suspension_reason', 'banned_reason',
         'privacy_stats', 'privacy_activity',
     ];

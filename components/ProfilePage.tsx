@@ -1,7 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { User } from '../types';
-import { Edit2, Save, Book, Users, AlertTriangle, Award, MapPin, Mail, Loader2, Info, Ban, X, Clock, Calendar, TrendingUp, TrendingDown, Shield, CheckCircle2, Star } from 'lucide-react';
+import { Edit2, Save, Book, Users, AlertTriangle, Award, MapPin, Mail, Loader2, Info, Ban, X, Clock, Calendar, TrendingUp, TrendingDown, Shield, CheckCircle2, Star, Camera } from 'lucide-react';
+import { API_CONFIG } from '../constants';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { apiService } from '../services/apiService';
 
@@ -30,6 +31,23 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUserUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingAvatar(true);
+    try {
+      const res = await apiService.uploadAvatar(file);
+      onUserUpdate({ ...user, avatar: res.avatar });
+    } catch (err: any) {
+      alert(err.message || 'Failed to upload avatar.');
+    } finally {
+      setUploadingAvatar(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = '';
+    }
+  };
   const [stats, setStats] = useState<any>(null);
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [details, setDetails] = useState<any>(null);
@@ -152,10 +170,29 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUserUpdate }) => {
       <div className="relative">
         <div className="h-44 sm:h-48 w-full bg-gradient-to-r from-orange-400 to-orange-600 rounded-[2rem] sm:rounded-[3rem] shadow-xl shadow-orange-100"></div>
         <div className="absolute top-4 sm:top-8 left-4 sm:left-12 flex flex-col md:flex-row items-start gap-3 sm:gap-6 w-[calc(100%-2rem)] sm:w-[calc(100%-6rem)]">
-          <div className="w-20 h-20 sm:w-32 sm:h-32 bg-white rounded-[1.5rem] sm:rounded-[2.5rem] p-1.5 sm:p-2 shadow-2xl shrink-0">
-            <div className="w-full h-full bg-orange-100 rounded-[1.25rem] sm:rounded-[2rem] flex items-center justify-center text-orange-600 text-2xl sm:text-4xl font-black border border-orange-200">
-              {user.avatar || user.name[0]}
+          <div className="relative w-20 h-20 sm:w-32 sm:h-32 shrink-0 group">
+            <div className="w-full h-full bg-white rounded-[1.5rem] sm:rounded-[2.5rem] p-1.5 sm:p-2 shadow-2xl">
+              {user.avatar ? (
+                <img
+                  src={`${API_CONFIG.STORAGE_URL}/${user.avatar}`}
+                  alt={user.name}
+                  className="w-full h-full rounded-[1.25rem] sm:rounded-[2rem] object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-orange-100 rounded-[1.25rem] sm:rounded-[2rem] flex items-center justify-center text-orange-600 text-2xl sm:text-4xl font-black border border-orange-200">
+                  {user.name[0]}
+                </div>
+              )}
             </div>
+            <button
+              onClick={() => avatarInputRef.current?.click()}
+              disabled={uploadingAvatar}
+              className="absolute inset-0 rounded-[1.5rem] sm:rounded-[2.5rem] bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+              title="Change photo"
+            >
+              {uploadingAvatar ? <Loader2 size={22} className="text-white animate-spin" /> : <Camera size={22} className="text-white" />}
+            </button>
+            <input ref={avatarInputRef} type="file" accept="image/jpg,image/jpeg,image/png,image/webp" className="hidden" onChange={handleAvatarUpload} />
           </div>
           <div className="mt-0 sm:mt-12 space-y-1 flex-1 min-w-0">
             <div className="flex items-center gap-2 sm:gap-3 flex-wrap">

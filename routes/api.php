@@ -89,6 +89,7 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\SuspendedUserMiddleware:
     // Profile
     Route::get('/profile', [ProfileController::class, 'show']);
     Route::put('/profile', [ProfileController::class, 'update']);
+    Route::post('/profile/avatar', [ProfileController::class, 'uploadAvatar']);
     Route::post('/profile/change-password', [ProfileController::class, 'changePassword']);
     Route::get('/profile/stats', [ProfileController::class, 'stats']);
     Route::get('/profile/details', [ProfileController::class, 'details']);

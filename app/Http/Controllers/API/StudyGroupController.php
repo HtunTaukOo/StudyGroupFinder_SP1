@@ -70,8 +70,10 @@ class StudyGroupController extends Controller
             'location' => 'required|string',
         ]);
 
-        // Auto-approve all groups (approval system disabled)
-        $approvalStatus = 'approved';
+        // Leaders with 50+ karma points can create groups freely.
+        // Leaders below 50 karma require admin approval.
+        // Admins are always auto-approved.
+        $approvalStatus = ($user->karma_points >= 50 || $user->role === 'admin') ? 'approved' : 'pending';
 
         $group = StudyGroup::create(array_merge($validated, [
             'creator_id' => $user->id,
@@ -307,7 +309,7 @@ class StudyGroupController extends Controller
 
         // Get all approved members with their details
         $members = $group->members()
-            ->select('users.id', 'users.name', 'users.email', 'users.major', 'users.role', 'group_user.approved_at')
+            ->select('users.id', 'users.name', 'users.email', 'users.major', 'users.role', 'users.avatar', 'group_user.approved_at')
             ->orderByRaw('CASE WHEN users.id = ? THEN 0 ELSE 1 END', [$group->creator_id])
             ->orderBy('group_user.approved_at', 'asc')
             ->get()
@@ -318,6 +320,7 @@ class StudyGroupController extends Controller
                     'email' => $member->email,
                     'major' => $member->major,
                     'role' => $member->role,
+                    'avatar' => $member->avatar,
                     'is_leader' => $member->id === $group->creator_id,
                     'joined_at' => $member->approved_at,
                 ];

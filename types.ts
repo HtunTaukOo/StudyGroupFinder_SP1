@@ -134,6 +134,7 @@ export interface GroupMember {
   email: string;
   major?: string;
   role: string;
+  avatar: string | null;
   is_leader: boolean;
   joined_at: string;
 }

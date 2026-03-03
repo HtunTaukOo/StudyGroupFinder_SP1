@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { AlertTriangle, Send, Search, Loader2, Shield, User as UserIcon } from 'lucide-react';
 import { Report } from '../types';
 import { apiService } from '../services/apiService';
+import { API_CONFIG } from '../constants';
 
 const ReportPage: React.FC = () => {
   const [reports, setReports] = useState<Report[]>([]);
@@ -154,8 +155,11 @@ const ReportPage: React.FC = () => {
                 {selectedUser ? (
                   <div className="p-4 bg-orange-50 border-2 border-orange-200 rounded-2xl flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="w-10 h-10 bg-orange-100 text-orange-600 rounded-xl flex items-center justify-center font-bold shrink-0">
-                        {selectedUser.avatar || selectedUser.name[0]}
+                      <div className="w-10 h-10 bg-orange-100 text-orange-600 rounded-xl flex items-center justify-center font-bold shrink-0 overflow-hidden">
+                        {selectedUser.avatar
+                          ? <img src={`${API_CONFIG.STORAGE_URL}/${selectedUser.avatar}`} alt={selectedUser.name} className="w-full h-full object-cover" />
+                          : selectedUser.name[0]
+                        }
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-slate-900 text-sm truncate">{selectedUser.name}</p>
@@ -199,8 +203,11 @@ const ReportPage: React.FC = () => {
                             onClick={() => handleUserSelect(user)}
                             className="w-full p-4 flex items-center gap-3 hover:bg-slate-50 transition-all border-b border-slate-100 last:border-0"
                           >
-                            <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center font-bold shrink-0">
-                              {user.avatar || user.name[0]}
+                            <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center font-bold shrink-0 overflow-hidden">
+                              {user.avatar
+                                ? <img src={`${API_CONFIG.STORAGE_URL}/${user.avatar}`} alt={user.name} className="w-full h-full object-cover" />
+                                : user.name[0]
+                              }
                             </div>
                             <div className="text-left flex-1 min-w-0">
                               <p className="font-bold text-slate-900 text-sm truncate">{user.name}</p>

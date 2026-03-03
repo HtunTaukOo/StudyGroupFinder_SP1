@@ -340,13 +340,16 @@ const HomePage: React.FC = () => {
       return;
     }
     try {
-      await apiService.createGroup({
+      const res: any = await apiService.createGroup({
         name: newGroup.subject,
         ...newGroup
       });
       setIsModalOpen(false);
-      loadAllData();
       setNewGroup({ subject: '', goal: '', description: '', max_members: 5, location: '', faculty: '', status: 'open' });
+      if (res?.pending_approval) {
+        alert('Your group has been submitted and is pending admin approval. You\'ll be notified once it\'s reviewed.\n\nTip: Leaders with 50+ karma points can create groups without approval.');
+      }
+      loadAllData();
     } catch (err: any) {
       alert("Failed to create group: " + err.message);
     }
@@ -950,8 +953,11 @@ const HomePage: React.FC = () => {
                       className="bg-white border border-slate-200 rounded-2xl p-6 hover:shadow-lg hover:border-orange-200 transition-all cursor-pointer group"
                     >
                       <div className="flex items-center gap-4 mb-4">
-                        <div className="w-14 h-14 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center font-black text-xl border border-orange-200/50 group-hover:scale-105 transition-transform">
-                          {user.avatar || user.name[0]}
+                        <div className="w-14 h-14 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center font-black text-xl border border-orange-200/50 group-hover:scale-105 transition-transform overflow-hidden">
+                          {user.avatar
+                            ? <img src={`${API_CONFIG.STORAGE_URL}/${user.avatar}`} alt={user.name} className="w-full h-full object-cover" />
+                            : user.name[0]
+                          }
                         </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="font-bold text-slate-900 truncate group-hover:text-orange-500 transition-colors">{user.name}</h4>

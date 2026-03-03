@@ -30,7 +30,7 @@ class DiscoverController extends Controller {
     public function leaders() {
         return $this->scopeLeaderboardRoles(User::query())
             ->orderBy('karma_points', 'desc')
-            ->select('id', 'name', 'email', 'major', 'karma_points', 'role')
+            ->select('id', 'name', 'email', 'major', 'karma_points', 'role', 'avatar')
             ->take(10)
             ->get();
     }
@@ -50,7 +50,7 @@ class DiscoverController extends Controller {
                     ->orWhereRaw('LOWER(major) LIKE ?', ["%{$lower}%"]);
             })
             ->orderBy('karma_points', 'desc')
-            ->select('id', 'name', 'email', 'major', 'karma_points', 'role')
+            ->select('id', 'name', 'email', 'major', 'karma_points', 'role', 'avatar')
             ->take(20)
             ->get();
     }

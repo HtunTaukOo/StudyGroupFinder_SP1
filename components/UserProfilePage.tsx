@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { apiService } from '../services/apiService';
+import { API_CONFIG } from '../constants';
 
 type ModalType = 'groups' | 'meetings' | 'warnings' | 'karma' | null;
 
@@ -155,10 +156,11 @@ const UserProfilePage: React.FC = () => {
       <div className="relative">
         <div className="h-48 w-full bg-gradient-to-r from-orange-400 to-orange-600 rounded-[3rem] shadow-xl shadow-orange-100"></div>
         <div className="absolute top-8 left-12 flex flex-col md:flex-row items-start gap-6 w-[calc(100%-6rem)]">
-          <div className="w-32 h-32 bg-white rounded-[2.5rem] p-2 shadow-2xl shrink-0">
-            <div className="w-full h-full bg-orange-100 rounded-[2rem] flex items-center justify-center text-orange-600 text-4xl font-black border border-orange-200">
-              {user.avatar || user.name[0]}
-            </div>
+          <div className="w-32 h-32 bg-white rounded-[2.5rem] p-2 shadow-2xl shrink-0 overflow-hidden">
+            {user.avatar
+              ? <img src={`${API_CONFIG.STORAGE_URL}/${user.avatar}`} alt={user.name} className="w-full h-full rounded-[2rem] object-cover" />
+              : <div className="w-full h-full bg-orange-100 rounded-[2rem] flex items-center justify-center text-orange-600 text-4xl font-black border border-orange-200">{user.name[0]}</div>
+            }
           </div>
           <div className="mt-12 space-y-1 flex-1 min-w-0">
             <div className="flex items-center gap-3 flex-wrap">

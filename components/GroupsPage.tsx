@@ -1453,9 +1453,12 @@ const GroupsPage: React.FC = () => {
                       <div key={member.id} className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-200 hover:bg-slate-100 transition-all">
                         <Link
                           to={`/profile/${member.id}`}
-                          className={`w-12 h-12 ${member.is_leader ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'} rounded-xl flex items-center justify-center font-bold text-lg cursor-pointer hover:scale-105 transition-transform`}
+                          className={`w-12 h-12 ${member.is_leader ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'} rounded-xl flex items-center justify-center font-bold text-lg cursor-pointer hover:scale-105 transition-transform overflow-hidden`}
                         >
-                          {member.name[0]}
+                          {member.avatar
+                            ? <img src={`${API_CONFIG.STORAGE_URL}/${member.avatar}`} alt={member.name} className="w-full h-full object-cover" />
+                            : member.name[0]
+                          }
                         </Link>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">

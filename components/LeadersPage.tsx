@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Trophy, Loader2, Award, TrendingUp, Info, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { apiService } from '../services/apiService';
+import { API_CONFIG } from '../constants';
 
 interface Leader {
   id: number;
@@ -11,6 +12,7 @@ interface Leader {
   role: string;
   karma_points: number;
   weekly_active_hours: number;
+  avatar: string | null;
 }
 
 const LeadersPage: React.FC = () => {
@@ -143,9 +145,12 @@ const LeadersPage: React.FC = () => {
                         <div className="flex items-center gap-3 sm:gap-4">
                           <Link
                             to={`/profile/${user.id}`}
-                            className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center font-bold text-orange-600 border border-orange-100 cursor-pointer hover:scale-105 transition-transform"
+                            className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center font-bold text-orange-600 border border-orange-100 cursor-pointer hover:scale-105 transition-transform overflow-hidden"
                           >
-                            {user.name[0]}
+                            {user.avatar
+                              ? <img src={`${API_CONFIG.STORAGE_URL}/${user.avatar}`} alt={user.name} className="w-full h-full object-cover" />
+                              : user.name[0]
+                            }
                           </Link>
                           <div>
                             <Link

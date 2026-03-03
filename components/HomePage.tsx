@@ -429,12 +429,9 @@ const HomePage: React.FC = () => {
         <div className="flex items-center gap-3 mb-4">
           <Link
             to={`/profile/${group.creator_id}`}
-            className="w-12 h-12 bg-orange-100 text-orange-600 rounded-xl flex items-center justify-center font-bold text-xl border border-orange-200 cursor-pointer hover:scale-105 transition-transform overflow-hidden"
+            className="w-12 h-12 bg-orange-100 text-orange-600 rounded-xl flex items-center justify-center font-bold text-xl border border-orange-200 cursor-pointer hover:scale-105 transition-transform"
           >
-            {group.creator_avatar
-              ? <img src={`${API_CONFIG.STORAGE_URL}/${group.creator_avatar}`} alt={group.creator_name} className="w-full h-full object-cover" />
-              : group.name[0].toUpperCase()
-            }
+            {group.name[0].toUpperCase()}
           </Link>
           <div className="flex-1 min-w-0">
             <button

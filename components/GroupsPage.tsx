@@ -609,7 +609,7 @@ const GroupsPage: React.FC = () => {
     setLoadingEvents(true);
     try {
       const allEvents = await apiService.getEvents();
-      setGroupEvents(allEvents.filter((e: any) => e.group_id === groupId));
+      setGroupEvents(allEvents.filter((e: any) => String(e.group_id) === String(groupId)));
     } catch (err) {
       console.error("Failed to fetch events", err);
     } finally {

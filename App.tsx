@@ -42,6 +42,7 @@ import AdminModerationActivity from './components/admin/AdminModerationActivity'
 
 import { User, AppNotification } from './types';
 import { apiService } from './services/apiService';
+import { API_CONFIG } from './constants';
 
 const SidebarLink: React.FC<{ to: string; icon: React.ReactNode; label: string }> = ({ to, icon, label }) => {
   const location = useLocation();
@@ -498,8 +499,11 @@ const Layout: React.FC<{ children: React.ReactNode; user: User; onLogout: () => 
             </div>
             <div className="h-10 w-[1px] bg-slate-200 mx-2 hidden sm:block"></div>
             <Link to="/profile" className="flex items-center gap-3 hover:bg-slate-50 p-1.5 rounded-xl transition-all">
-              <div className="w-9 h-9 bg-orange-100 text-orange-600 rounded-lg flex items-center justify-center font-bold text-sm border border-orange-200">
-                {user.avatar || user.name[0]}
+              <div className="w-9 h-9 bg-orange-100 text-orange-600 rounded-lg flex items-center justify-center font-bold text-sm border border-orange-200 overflow-hidden">
+                {user.avatar
+                  ? <img src={`${API_CONFIG.STORAGE_URL}/${user.avatar}`} alt={user.name} className="w-full h-full object-cover" />
+                  : user.name[0]
+                }
               </div>
               <div className="hidden md:flex flex-col text-left">
                 <span className="text-sm font-bold text-slate-900 leading-none">{user.name}</span>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Send, Calendar as CalendarIcon, MessageSquare, Info, MoreHorizontal, Sparkles, Loader2, BookOpen, Mic, X, Users as UsersIcon, Clock, MapPin, Search, Archive, Unlock, Lock as LockIcon, Edit2, Trash2, Bell, UserX, Paperclip, File as FileIcon, Video, LogOut, Repeat, Plus, UserPlus, Check, ChevronDown, ChevronLeft } from 'lucide-react';
+import { Send, Calendar as CalendarIcon, MessageSquare, Info, MoreHorizontal, Sparkles, Loader2, BookOpen, Mic, X, Users as UsersIcon, Clock, MapPin, Search, Archive, Unlock, Lock as LockIcon, Edit2, Trash2, Bell, UserX, Paperclip, File as FileIcon, Video, LogOut, Repeat, Plus, UserPlus, Check, ChevronDown, ChevronLeft, ExternalLink } from 'lucide-react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { StudyGroup, Message, User, GroupStatus, GroupMember } from '../types';
 import { geminiService } from '../services/geminiService';
@@ -1726,7 +1726,10 @@ const GroupsPage: React.FC = () => {
                                 <span className="flex items-center gap-1.5">
                                   <MapPin size={14} />
                                   {/^https?:\/\//i.test(event.location) ? (
-                                    <a href={event.location} target="_blank" rel="noopener noreferrer" className="font-medium truncate text-orange-500 underline hover:text-orange-600">{event.location}</a>
+                                    <a href={event.location} target="_blank" rel="noopener noreferrer" className="font-medium text-orange-500 hover:text-orange-600 flex items-center gap-1">
+                                      {(() => { try { return new URL(event.location).hostname.replace(/^www\./, ''); } catch { return 'Open link'; } })()}
+                                      <ExternalLink size={11} />
+                                    </a>
                                   ) : (
                                     <span className="font-medium truncate">{event.location}</span>
                                   )}

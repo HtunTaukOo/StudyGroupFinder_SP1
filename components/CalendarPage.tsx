@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Share2, Plus, Calendar as CalendarIcon, MapPin, Clock, Loader2, X, Repeat, Users, Bell } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Share2, Plus, Calendar as CalendarIcon, MapPin, Clock, Loader2, X, Repeat, Users, Bell, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { apiService } from '../services/apiService';
 import { StudyGroup } from '../types';
@@ -471,7 +471,13 @@ const CalendarPage: React.FC = () => {
                         {event.location && (
                           <div className="flex items-center gap-2 text-slate-500">
                             <MapPin size={14} />
-                            <span className="text-xs font-bold">{event.location}</span>
+                            {/^https?:\/\//i.test(event.location)
+                              ? <a href={event.location} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-orange-500 hover:text-orange-600 flex items-center gap-1">
+                                  {(() => { try { return new URL(event.location).hostname.replace(/^www\./, ''); } catch { return 'Open link'; } })()}
+                                  <ExternalLink size={10} />
+                                </a>
+                              : <span className="text-xs font-bold">{event.location}</span>
+                            }
                           </div>
                         )}
                       </div>
@@ -616,7 +622,13 @@ const CalendarPage: React.FC = () => {
                   <MapPin size={18} className="text-slate-400 shrink-0" />
                   <div>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Location</p>
-                    <p className="text-sm font-bold text-slate-900">{selectedEvent.location}</p>
+                    {/^https?:\/\//i.test(selectedEvent.location)
+                      ? <a href={selectedEvent.location} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-orange-500 hover:text-orange-600 flex items-center gap-1.5 mt-0.5">
+                          {(() => { try { return new URL(selectedEvent.location).hostname.replace(/^www\./, ''); } catch { return 'Open link'; } })()}
+                          <ExternalLink size={13} />
+                        </a>
+                      : <p className="text-sm font-bold text-slate-900">{selectedEvent.location}</p>
+                    }
                   </div>
                 </div>
               )}
@@ -844,7 +856,13 @@ const CalendarPage: React.FC = () => {
                             {event.location && (
                               <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
                                 <MapPin size={12} />
-                                <span className="font-bold">{event.location}</span>
+                                {/^https?:\/\//i.test(event.location)
+                                  ? <a href={event.location} target="_blank" rel="noopener noreferrer" className="font-bold text-orange-500 hover:text-orange-600 flex items-center gap-1">
+                                      {(() => { try { return new URL(event.location).hostname.replace(/^www\./, ''); } catch { return 'Open link'; } })()}
+                                      <ExternalLink size={10} />
+                                    </a>
+                                  : <span className="font-bold">{event.location}</span>
+                                }
                               </div>
                             )}
                           </div>

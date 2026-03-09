@@ -901,7 +901,7 @@ const HomePage: React.FC = () => {
                           : isClosed
                             ? 'Request to Join'
                           : isFull
-                            ? 'Hub Full'
+                            ? 'Group Full'
                           : 'Join Group'}
                       </button>
                     </div>
@@ -1112,7 +1112,7 @@ const HomePage: React.FC = () => {
                         : isClosed
                           ? 'Request to Join'
                         : isFull
-                          ? 'Hub Full'
+                          ? 'Group Full'
                         : 'Join Group'}
                     </button>
                   </div>

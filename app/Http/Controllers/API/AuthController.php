@@ -53,15 +53,15 @@ class AuthController extends Controller
 
         $this->clearAdminCaches();
 
-        // Auto-verify email (no custom domain configured for sending emails)
-        $user->markEmailAsVerified();
+        // Require email verification via verification link
+        $this->sendVerificationEmail($user);
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'user' => $user,
             'token' => $token,
-            'message' => 'Registration successful.',
+            'message' => 'Registration successful. Please check your email to verify your account.',
         ], 201);
     }
 

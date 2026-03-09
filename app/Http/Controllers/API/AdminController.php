@@ -525,7 +525,7 @@ class AdminController extends Controller
         // Send email to creator
         $creator = User::find($group->creator_id);
         if ($creator && $creator->email_verified_at) {
-            Mail::to($creator->email)->send(new GroupApprovedMail($creator, $group, Auth::user()->name));
+            Mail::to($creator->email)->queue(new GroupApprovedMail($creator, $group, Auth::user()->name));
         }
 
         // Clear caches
@@ -1043,7 +1043,7 @@ class AdminController extends Controller
             // Send ban email if user's email is verified
             if ($user->email_verified_at) {
                 try {
-                    Mail::to($user->email)->send(new UserBannedMail(
+                    Mail::to($user->email)->queue(new UserBannedMail(
                         $user->name,
                         $banReason
                     ));
@@ -1075,7 +1075,7 @@ class AdminController extends Controller
             if ($user->email_verified_at) {
                 try {
                     $emailReason = $validated['reason'] ?? 'You have received a warning from the admin';
-                    Mail::to($user->email)->send(new UserWarnedMail(
+                    Mail::to($user->email)->queue(new UserWarnedMail(
                         $user->name,
                         $emailReason,
                         $user->warnings
@@ -1170,7 +1170,7 @@ class AdminController extends Controller
             if ($user->email_verified_at) {
                 try {
                     $emailReason = $validated['reason'] ?? 'Your account has been banned by an administrator';
-                    Mail::to($user->email)->send(new UserBannedMail(
+                    Mail::to($user->email)->queue(new UserBannedMail(
                         $user->name,
                         $emailReason
                     ));
@@ -1236,7 +1236,7 @@ class AdminController extends Controller
         // Send email if user's email is verified
         if ($user->email_verified_at) {
             try {
-                Mail::to($user->email)->send(new UserUnbannedMail(
+                Mail::to($user->email)->queue(new UserUnbannedMail(
                     $user,
                     Auth::user()->name
                 ));
@@ -1291,7 +1291,7 @@ class AdminController extends Controller
         // Send email if user's email is verified
         if ($user->email_verified_at) {
             try {
-                Mail::to($user->email)->send(new UserUnsuspendedMail(
+                Mail::to($user->email)->queue(new UserUnsuspendedMail(
                     $user,
                     Auth::user()->name
                 ));
@@ -1593,7 +1593,7 @@ class AdminController extends Controller
         // Send email notification if user's email is verified
         if ($user->email_verified_at) {
             try {
-                Mail::to($user->email)->send(new RoleChangedMail(
+                Mail::to($user->email)->queue(new RoleChangedMail(
                     $user,
                     $oldRole,
                     $validated['role'],
@@ -1680,7 +1680,7 @@ class AdminController extends Controller
             if ($user->email_verified_at) {
                 try {
                     $emailReason = $validated['reason'] ?? "Your account has been suspended for {$validated['duration_days']} days";
-                    Mail::to($user->email)->send(new UserSuspendedMail(
+                    Mail::to($user->email)->queue(new UserSuspendedMail(
                         $user,
                         $user->suspended_until->format('F j, Y g:i A'),
                         $emailReason,
@@ -1749,7 +1749,7 @@ class AdminController extends Controller
         // Send email notification if user's email is verified
         if ($user->email_verified_at) {
             try {
-                Mail::to($user->email)->send(new PasswordResetByAdminMail(
+                Mail::to($user->email)->queue(new PasswordResetByAdminMail(
                     $user,
                     $tempPassword,
                     Auth::user()->name

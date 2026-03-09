@@ -67,7 +67,7 @@ class FeedbackController extends Controller
             // Send email if admin's email is verified
             if ($admin->email_verified_at) {
                 try {
-                    Mail::to($admin->email)->send(new ReportSubmittedMail(
+                    Mail::to($admin->email)->queue(new ReportSubmittedMail(
                         Auth::user()->name,
                         $validated['group_name'],
                         $validated['rating'],

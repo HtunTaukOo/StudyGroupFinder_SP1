@@ -123,7 +123,7 @@ class CalendarController extends Controller {
                 // Send email notification if member's email is verified
                 if ($member->email_verified_at) {
                     try {
-                        Mail::to($member->email)->send(new EventCreatedMail(
+                        Mail::to($member->email)->queue(new EventCreatedMail(
                             $member->name,
                             $group->name,
                             $event->title,
@@ -185,7 +185,7 @@ class CalendarController extends Controller {
                     // Send email notification if member's email is verified
                     if ($member->email_verified_at) {
                         try {
-                            Mail::to($member->email)->send(new EventCancelledMail(
+                            Mail::to($member->email)->queue(new EventCancelledMail(
                                 $member->name,
                                 $group->name,
                                 $event->title,

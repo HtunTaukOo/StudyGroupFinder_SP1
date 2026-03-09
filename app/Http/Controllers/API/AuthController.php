@@ -119,7 +119,7 @@ class AuthController extends Controller
         $verificationUrl = $this->generateVerificationUrl($user);
 
         try {
-            Mail::to($user->email)->send(new EmailVerificationMail($user->name, $verificationUrl));
+            Mail::to($user->email)->queue(new EmailVerificationMail($user->name, $verificationUrl));
         } catch (\Exception $e) {
             \Log::error('Failed to send verification email: ' . $e->getMessage());
         }
@@ -215,7 +215,7 @@ class AuthController extends Controller
         $resetUrl = $frontendUrl . '/#/reset-password?token=' . $token . '&email=' . urlencode($user->email);
 
         try {
-            Mail::to($user->email)->send(new PasswordResetMail($user->name, $resetUrl));
+            Mail::to($user->email)->queue(new PasswordResetMail($user->name, $resetUrl));
         } catch (\Exception $e) {
             \Log::error('Failed to send password reset email: ' . $e->getMessage());
         }

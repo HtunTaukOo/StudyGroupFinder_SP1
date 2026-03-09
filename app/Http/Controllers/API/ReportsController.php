@@ -262,7 +262,7 @@ class ReportsController extends Controller
                     if ($targetUser->email_verified_at) {
                         try {
                             $warningReason = $validated['resolution_notes'] ?? 'Warning issued via report resolution';
-                            Mail::to($targetUser->email)->send(new UserWarnedMail(
+                            Mail::to($targetUser->email)->queue(new UserWarnedMail(
                                 $targetUser->name,
                                 $warningReason,
                                 $targetUser->warnings
@@ -275,7 +275,7 @@ class ReportsController extends Controller
                     // Send ban email if auto-banned
                     if ($activeWarningsCount >= 3 && $targetUser->email_verified_at) {
                         try {
-                            Mail::to($targetUser->email)->send(new UserBannedMail(
+                            Mail::to($targetUser->email)->queue(new UserBannedMail(
                                 $targetUser->name,
                                 'Automatic ban after receiving 3 warnings'
                             ));
@@ -320,7 +320,7 @@ class ReportsController extends Controller
                     if ($targetUser->email_verified_at) {
                         try {
                             $emailReason = $validated['resolution_notes'] ?? "Your account has been suspended for {$days} days";
-                            Mail::to($targetUser->email)->send(new UserSuspendedMail(
+                            Mail::to($targetUser->email)->queue(new UserSuspendedMail(
                                 $targetUser,
                                 $targetUser->suspended_until->format('F j, Y g:i A'),
                                 $emailReason,
@@ -365,7 +365,7 @@ class ReportsController extends Controller
                     if ($targetUser->email_verified_at) {
                         try {
                             $emailReason = $validated['resolution_notes'] ?? 'Your account has been permanently banned';
-                            Mail::to($targetUser->email)->send(new UserBannedMail(
+                            Mail::to($targetUser->email)->queue(new UserBannedMail(
                                 $targetUser->name,
                                 $emailReason
                             ));

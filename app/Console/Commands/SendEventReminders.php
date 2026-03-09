@@ -76,7 +76,7 @@ class SendEventReminders extends Command
                 }
 
                 try {
-                    Mail::to($member->email)->send(new EventReminderMail(
+                    Mail::to($member->email)->queue(new EventReminderMail(
                         $member->name,
                         $group->name,
                         $event->title,

@@ -205,7 +205,7 @@ class StudyGroupController extends Controller
                 $leader = User::find($group->creator_id);
                 if ($leader && $leader->email_verified_at) {
                     try {
-                        Mail::to($leader->email)->send(new GroupJoinNotification(
+                        Mail::to($leader->email)->queue(new GroupJoinNotification(
                             $user->name,
                             $group->name,
                             $group->id
@@ -270,7 +270,7 @@ class StudyGroupController extends Controller
                 $leader = User::find($group->creator_id);
                 if ($leader && $leader->email_verified_at) {
                     try {
-                        Mail::to($leader->email)->send(new JoinRequestMail($leader->name, $user->name, $group->name));
+                        Mail::to($leader->email)->queue(new JoinRequestMail($leader->name, $user->name, $group->name));
                     } catch (\Exception $e) {
                         \Log::error('Failed to send join request email: ' . $e->getMessage());
                     }
@@ -416,7 +416,7 @@ class StudyGroupController extends Controller
             // Send email notification if user's email is verified
             if ($requestingUser->email_verified_at) {
                 try {
-                    Mail::to($requestingUser->email)->send(new JoinApprovedMail($requestingUser->name, $group->name));
+                    Mail::to($requestingUser->email)->queue(new JoinApprovedMail($requestingUser->name, $group->name));
                 } catch (\Exception $e) {
                     \Log::error('Failed to send join approved email: ' . $e->getMessage());
                 }
@@ -503,7 +503,7 @@ class StudyGroupController extends Controller
             // Send email notification if user's email is verified
             if ($requestingUser->email_verified_at) {
                 try {
-                    Mail::to($requestingUser->email)->send(new JoinRejectedMail($requestingUser->name, $group->name, $rejectionReason));
+                    Mail::to($requestingUser->email)->queue(new JoinRejectedMail($requestingUser->name, $group->name, $rejectionReason));
                 } catch (\Exception $e) {
                     \Log::error('Failed to send join rejected email: ' . $e->getMessage());
                 }
@@ -556,7 +556,7 @@ class StudyGroupController extends Controller
             // Send email notification if user's email is verified
             if ($removedUser->email_verified_at) {
                 try {
-                    Mail::to($removedUser->email)->send(new RemovedFromGroupMail($removedUser->name, $group->name));
+                    Mail::to($removedUser->email)->queue(new RemovedFromGroupMail($removedUser->name, $group->name));
                 } catch (\Exception $e) {
                     \Log::error('Failed to send removed from group email: ' . $e->getMessage());
                 }
@@ -668,7 +668,7 @@ class StudyGroupController extends Controller
         // Send email notification if user's email is verified
         if ($invitedUser && $invitedUser->email_verified_at) {
             try {
-                Mail::to($invitedUser->email)->send(new GroupInvitationMail(
+                Mail::to($invitedUser->email)->queue(new GroupInvitationMail(
                     $invitedUser->name,
                     $currentUser->name,
                     $group->name,
@@ -754,7 +754,7 @@ class StudyGroupController extends Controller
             // Send email to inviter
             if ($inviter->email_verified_at) {
                 try {
-                    Mail::to($inviter->email)->send(new InvitationAcceptedMail(
+                    Mail::to($inviter->email)->queue(new InvitationAcceptedMail(
                         $inviter->name,
                         $currentUser->name,
                         $group->name
@@ -919,7 +919,7 @@ class StudyGroupController extends Controller
         // Send email to old owner if their email is verified
         if ($oldOwner->email_verified_at) {
             try {
-                Mail::to($oldOwner->email)->send(new OwnershipTransferredMail(
+                Mail::to($oldOwner->email)->queue(new OwnershipTransferredMail(
                     $oldOwner,
                     $group,
                     $newOwner,
@@ -933,7 +933,7 @@ class StudyGroupController extends Controller
         // Send email to new owner if their email is verified
         if ($newOwner->email_verified_at) {
             try {
-                Mail::to($newOwner->email)->send(new OwnershipTransferredMail(
+                Mail::to($newOwner->email)->queue(new OwnershipTransferredMail(
                     $newOwner,
                     $group,
                     $newOwner,
@@ -997,7 +997,7 @@ class StudyGroupController extends Controller
         // Send email notification if creator's email is verified
         if ($group->creator->email_verified_at) {
             try {
-                Mail::to($group->creator->email)->send(new GroupApprovedMail(
+                Mail::to($group->creator->email)->queue(new GroupApprovedMail(
                     $group->creator,
                     $group,
                     Auth::user()->name
